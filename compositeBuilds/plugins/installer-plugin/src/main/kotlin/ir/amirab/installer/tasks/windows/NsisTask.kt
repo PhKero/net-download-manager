@@ -92,7 +92,8 @@ abstract class NsisTask : DefaultTask() {
             executable(
                 executable,
             )
-            args("-")
+            // the script has Arabic texts; without this makensis reads stdin in the Windows code page
+            args("-INPUTCHARSET", "UTF8", "-")
             standardInput = ByteArrayInputStream(script.toByteArray())
 
         }

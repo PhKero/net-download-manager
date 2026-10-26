@@ -1,6 +1,7 @@
 package ir.amirab.util.compose
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import arrow.core.combine
@@ -91,6 +92,37 @@ sealed interface StringSource {
         }
     }
 
+    /**
+     * Net Download Manager texts that are not in the properties files yet: English and Arabic side by side.
+     * Arabic is the only right-to-left language we ship, so the layout direction tells us which one to show.
+     */
+    @Immutable
+    data class Bilingual(
+        val en: String,
+        val ar: String,
+    ) : StringSource {
+        private fun pick(arabic: Boolean) = if (arabic) ar else en
+        private fun isArabicNow() = runCatching { LanguageManager.instance.isRtl.value }.getOrDefault(false)
+
+        @Composable
+        override fun rememberString(): String {
+            return pick(LanguageManager.instance.isRtl.collectAsState().value)
+        }
+
+        @Composable
+        override fun rememberString(args: Map<String, String>): String {
+            return rememberString().withReplacedArgs(args)
+        }
+
+        override fun getString(): String {
+            return pick(isArabicNow())
+        }
+
+        override fun getString(args: Map<String, String>): String {
+            return getString().withReplacedArgs(args)
+        }
+    }
+
     @Immutable
     data class CombinedStringSource(
         val values: List<StringSource>,
@@ -134,6 +166,17 @@ fun MyStringResource.asStringSourceWithARgs(args: Map<String, String>): StringSo
 
 fun String.asStringSource(): StringSource {
     return StringSource.FromString(this)
+}
+
+/** English / Arabic text for our own screens */
+fun tr(en: String, ar: String): StringSource {
+    return StringSource.Bilingual(en, ar)
+}
+
+/** same as [tr] but straight to a String, for Text("...") calls */
+@Composable
+fun trs(en: String, ar: String): String {
+    return StringSource.Bilingual(en, ar).rememberString()
 }
 
 fun List<StringSource>.combineStringSources(separator: String = ""): StringSource {

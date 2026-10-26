@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.settings
 
+import ir.amirab.util.compose.tr
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.abdownloadmanager.desktop.pages.settings.SettingSection.*
@@ -49,7 +50,7 @@ sealed class SettingSection(
 
     /** features added in this custom build */
     data object VideoExtras :
-        SettingSection(MyIcons.videoFile, "Video & Extras".asStringSource())
+        SettingSection(MyIcons.videoFile, tr("Video & Extras", "الفيديو والإضافات"))
 }
 
 interface SettingSectionGetter {
@@ -140,105 +141,105 @@ class DesktopSettingsComponent(
                     fun onOff(it: Boolean) = (if (it) Res.string.enabled else Res.string.disabled).asStringSource()
                     listOf(
                         ConfigurableGroup(
-                            groupTitle = MutableStateFlow("Video downloads (yt-dlp)".asStringSource()),
+                            groupTitle = MutableStateFlow(tr("Video downloads (yt-dlp)", "تحميل الفيديو (yt-dlp)")),
                             nestedConfigurable = listOf(
                                 BooleanConfigurable(
-                                    title = "Download subtitles".asStringSource(),
-                                    description = "Embed subtitles (including auto-generated ones) into downloaded videos".asStringSource(),
+                                    title = tr("Download subtitles", "تحميل الترجمة"),
+                                    description = tr("Embed subtitles (including auto-generated ones) into downloaded videos", "دمج الترجمة (ومنها التلقائية) داخل الفيديوهات المحمّلة"),
                                     backedBy = extrasSettings.downloadSubtitles,
                                     describe = ::onOff,
                                 ),
                                 StringConfigurable(
-                                    title = "Subtitle languages".asStringSource(),
-                                    description = "Comma separated language codes, for example: en, ar".asStringSource(),
+                                    title = tr("Subtitle languages", "لغات الترجمة"),
+                                    description = tr("Comma separated language codes, for example: en, ar", "رموز اللغات مفصولة بفاصلة، مثلًا: en, ar"),
                                     backedBy = extrasSettings.subtitleLanguages,
                                     describe = { "".asStringSource() },
                                     enabled = extrasSettings.downloadSubtitles,
                                 ),
                                 BooleanConfigurable(
-                                    title = "Save subtitles as .srt files".asStringSource(),
-                                    description = "Keep subtitles as separate files next to the video instead of inside it".asStringSource(),
+                                    title = tr("Save subtitles as .srt files", "حفظ الترجمة كملفات .srt"),
+                                    description = tr("Keep subtitles as separate files next to the video instead of inside it", "حفظ الترجمة في ملفات منفصلة بجانب الفيديو بدلًا من داخله"),
                                     backedBy = extrasSettings.subtitlesAsFile,
                                     describe = ::onOff,
                                     enabled = extrasSettings.downloadSubtitles,
                                 ),
                                 BooleanConfigurable(
-                                    title = "Update yt-dlp automatically".asStringSource(),
-                                    description = "Check once a day; sites change often and old versions stop working".asStringSource(),
+                                    title = tr("Update yt-dlp automatically", "تحديث yt-dlp تلقائيًا"),
+                                    description = tr("Check once a day; sites change often and old versions stop working", "يتحقق مرة يوميًا، لأن المواقع تتغير كثيرًا والنسخ القديمة تتوقف عن العمل"),
                                     backedBy = extrasSettings.ytDlpAutoUpdate,
                                     describe = ::onOff,
                                 ),
                             )
                         ),
                         ConfigurableGroup(
-                            groupTitle = MutableStateFlow("Extras".asStringSource()),
+                            groupTitle = MutableStateFlow(tr("Extras", "إضافات")),
                             nestedConfigurable = listOf(
                                 BooleanConfigurable(
-                                    title = "Monitor clipboard".asStringSource(),
-                                    description = "When you copy a link to a file or a video page, offer to download it".asStringSource(),
+                                    title = tr("Monitor clipboard", "مراقبة الحافظة"),
+                                    description = tr("When you copy a link to a file or a video page, offer to download it", "عند نسخ رابط ملف أو صفحة فيديو، يعرض البرنامج تحميله"),
                                     backedBy = extrasSettings.clipboardMonitor,
                                     describe = ::onOff,
                                 ),
                                 BooleanConfigurable(
-                                    title = "Scan downloads with antivirus".asStringSource(),
-                                    description = "Scan each finished file with Microsoft Defender".asStringSource(),
+                                    title = tr("Scan downloads with antivirus", "فحص التحميلات بمضاد الفيروسات"),
+                                    description = tr("Scan each finished file with Microsoft Defender", "فحص كل ملف مكتمل باستخدام Microsoft Defender"),
                                     backedBy = extrasSettings.antivirusScan,
                                     describe = ::onOff,
                                 ),
                                 BooleanConfigurable(
-                                    title = "Floating speed window".asStringSource(),
-                                    description = "A small always-on-top window with the total speed; drag it anywhere, click it to open the app".asStringSource(),
+                                    title = tr("Floating speed window", "نافذة السرعة العائمة"),
+                                    description = tr("A small always-on-top window with the total speed; drag it anywhere, click it to open the app", "نافذة صغيرة فوق كل النوافذ تعرض السرعة الكلية، اسحبها لأي مكان واضغط عليها لفتح البرنامج"),
                                     backedBy = extrasSettings.miniWindow,
                                     describe = ::onOff,
                                 ),
                                 BooleanConfigurable(
-                                    title = "Extract archives after download".asStringSource(),
-                                    description = "Unpack zip, rar and 7z files into a folder with the same name (uses 7-Zip)".asStringSource(),
+                                    title = tr("Extract archives after download", "فك ضغط الملفات بعد التحميل"),
+                                    description = tr("Unpack zip, rar and 7z files into a folder with the same name (uses 7-Zip)", "فك ضغط ملفات zip و rar و 7z في مجلد بنفس الاسم (باستخدام 7-Zip)"),
                                     backedBy = extrasSettings.autoExtract,
                                     describe = ::onOff,
                                 ),
                                 BooleanConfigurable(
-                                    title = "Delete the archive after extracting".asStringSource(),
-                                    description = "Remove the zip / rar file once it was extracted successfully".asStringSource(),
+                                    title = tr("Delete the archive after extracting", "حذف الملف المضغوط بعد فكه"),
+                                    description = tr("Remove the zip / rar file once it was extracted successfully", "حذف ملف zip / rar بعد فك ضغطه بنجاح"),
                                     backedBy = extrasSettings.deleteArchiveAfterExtract,
                                     describe = ::onOff,
                                     enabled = extrasSettings.autoExtract,
                                 ),
                                 BooleanConfigurable(
-                                    title = "Mark downloads as from the internet".asStringSource(),
-                                    description = "Windows warns before running downloaded programs, like files saved by a browser".asStringSource(),
+                                    title = tr("Mark downloads as from the internet", "تمييز التحميلات بأنها من الإنترنت"),
+                                    description = tr("Windows warns before running downloaded programs, like files saved by a browser", "ويندوز ينبّه قبل تشغيل البرامج المحمّلة، مثل الملفات المحفوظة من المتصفح"),
                                     backedBy = extrasSettings.markOfTheWeb,
                                     describe = ::onOff,
                                 ),
                             )
                         ),
                         ConfigurableGroup(
-                            groupTitle = MutableStateFlow("Speed schedule".asStringSource()),
+                            groupTitle = MutableStateFlow(tr("Speed schedule", "جدولة السرعة")),
                             mainConfigurable = BooleanConfigurable(
-                                title = "Limit speed during certain hours".asStringSource(),
-                                description = "For example slower while you work, full speed at night".asStringSource(),
+                                title = tr("Limit speed during certain hours", "تحديد السرعة في ساعات معينة"),
+                                description = tr("For example slower while you work, full speed at night", "مثلًا أبطأ أثناء عملك، وبالسرعة الكاملة ليلًا"),
                                 backedBy = extrasSettings.speedScheduleEnabled,
                                 describe = ::onOff,
                             ),
                             nestedEnabled = extrasSettings.speedScheduleEnabled,
                             nestedConfigurable = listOf(
                                 StringConfigurable(
-                                    title = "From".asStringSource(),
-                                    description = "Start time, 24 hour format (HH:MM)".asStringSource(),
+                                    title = tr("From", "من"),
+                                    description = tr("Start time, 24 hour format (HH:MM)", "وقت البدء، بنظام 24 ساعة (HH:MM)"),
                                     backedBy = extrasSettings.speedScheduleFrom,
                                     validate = { it.matches(Regex("""\d{1,2}:\d{2}""")) },
                                     describe = { "".asStringSource() },
                                 ),
                                 StringConfigurable(
-                                    title = "To".asStringSource(),
-                                    description = "End time, 24 hour format (HH:MM)".asStringSource(),
+                                    title = tr("To", "إلى"),
+                                    description = tr("End time, 24 hour format (HH:MM)", "وقت الانتهاء، بنظام 24 ساعة (HH:MM)"),
                                     backedBy = extrasSettings.speedScheduleTo,
                                     validate = { it.matches(Regex("""\d{1,2}:\d{2}""")) },
                                     describe = { "".asStringSource() },
                                 ),
                                 LongConfigurable(
-                                    title = "Speed limit (KB/s)".asStringSource(),
-                                    description = "Maximum total speed inside these hours".asStringSource(),
+                                    title = tr("Speed limit (KB/s)", "حد السرعة (KB/s)"),
+                                    description = tr("Maximum total speed inside these hours", "أقصى سرعة كلية في هذه الساعات"),
                                     backedBy = extrasSettings.speedScheduleLimitKb,
                                     describe = { "$it KB/s".asStringSource() },
                                     range = 1L..10_000_000L,
@@ -246,27 +247,27 @@ class DesktopSettingsComponent(
                             )
                         ),
                         ConfigurableGroup(
-                            groupTitle = MutableStateFlow("Download quota".asStringSource()),
+                            groupTitle = MutableStateFlow(tr("Download quota", "حد التحميل")),
                             mainConfigurable = BooleanConfigurable(
-                                title = "Limit how much is downloaded".asStringSource(),
-                                description = "Pause all downloads when the amount is reached, and resume them when the period ends".asStringSource(),
+                                title = tr("Limit how much is downloaded", "تحديد كمية التحميل"),
+                                description = tr("Pause all downloads when the amount is reached, and resume them when the period ends", "إيقاف كل التحميلات عند الوصول للكمية، واستئنافها عند انتهاء الفترة"),
                                 backedBy = extrasSettings.quotaEnabled,
                                 describe = ::onOff,
                             ),
                             nestedEnabled = extrasSettings.quotaEnabled,
                             nestedConfigurable = listOf(
                                 LongConfigurable(
-                                    title = "Megabytes".asStringSource(),
-                                    description = "Maximum amount to download in each period".asStringSource(),
+                                    title = tr("Megabytes", "ميجابايت"),
+                                    description = tr("Maximum amount to download in each period", "أقصى كمية تحميل في كل فترة"),
                                     backedBy = extrasSettings.quotaMegabytes,
                                     describe = { "$it MB".asStringSource() },
                                     range = 1L..10_000_000L,
                                 ),
                                 LongConfigurable(
-                                    title = "Period (minutes)".asStringSource(),
-                                    description = "Length of each period, 60 means per hour".asStringSource(),
+                                    title = tr("Period (minutes)", "الفترة (بالدقائق)"),
+                                    description = tr("Length of each period, 60 means per hour", "طول كل فترة، 60 تعني كل ساعة"),
                                     backedBy = extrasSettings.quotaPeriodMinutes,
-                                    describe = { "every $it minutes".asStringSource() },
+                                    describe = { tr("every $it minutes", "كل $it دقيقة") },
                                     range = 1L..10_080L,
                                 ),
                             )

@@ -569,7 +569,10 @@ val appModule = module {
             get(),
             LanguageSourceProvider(
                 ABDMLanguageResources.defaultLanguageResource,
-                ABDMLanguageResources.languages,
+                // Net Download Manager ships English and Arabic for now
+                ABDMLanguageResources.languages.filter {
+                    it.language.startsWith("en") || it.language.startsWith("ar")
+                },
             )
         )
     }

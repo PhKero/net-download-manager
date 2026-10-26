@@ -65,10 +65,23 @@ InstallDir "$LOCALAPPDATA\${APP_NAME}"
 
 
 !define INSTALL_DIR `$INSTDIR`
+
+; the Setup starts by asking English or Arabic (like IDM); the answer is remembered for the next updates
+!define MUI_LANGDLL_REGISTRY_ROOT "HKCU"
+!define MUI_LANGDLL_REGISTRY_KEY "${REG_APP_KEY}"
+!define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
+!define MUI_LANGDLL_WINDOWTITLE "${APP_DISPLAY_NAME}"
+!define MUI_LANGDLL_INFO "Please select a language / الرجاء اختيار اللغة"
+
 Function .onInit
 
     ; Call RestorePreviousInstallLocation
+    !insertmacro MUI_LANGDLL_DISPLAY
 
+FunctionEnd
+
+Function un.onInit
+    !insertmacro MUI_UNGETLANGUAGE
 FunctionEnd
 
 ; untick add-ons of browsers that are not installed (function defined further down)
@@ -79,10 +92,15 @@ FunctionEnd
 !define MUI_INSTFILESPAGE_NOAUTOCLOSE
 
 ; configure finish page
-!define MUI_FINISHPAGE_LINK "Open project in GitHub"
+!define MUI_FINISHPAGE_LINK "$(NDM_GITHUB)"
 !define MUI_FINISHPAGE_LINK_LOCATION "${SOURCE_CODE_URL}"
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_FUNCTION RunMainBinary
+
+; IDM style welcome text
+!define MUI_WELCOMEPAGE_TITLE "$(NDM_WELCOME_TITLE)"
+!define MUI_WELCOMEPAGE_TEXT "$(NDM_WELCOME_TEXT)"
+!define MUI_COMPONENTSPAGE_TEXT_TOP "$(NDM_COMPONENTS_TOP)"
 
 ;Installation Pages
 !insertmacro MUI_PAGE_WELCOME
@@ -98,8 +116,37 @@ FunctionEnd
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_UNPAGE_FINISH
 
-; set language
+; set language (the first one is the default)
 !insertmacro MUI_LANGUAGE "English"
+!insertmacro MUI_LANGUAGE "Arabic"
+!insertmacro MUI_RESERVEFILE_LANGDLL
+
+LangString NDM_GITHUB ${LANG_ENGLISH} "Open project in GitHub"
+LangString NDM_GITHUB ${LANG_ARABIC} "فتح المشروع على GitHub"
+LangString NDM_WELCOME_TITLE ${LANG_ENGLISH} "Welcome to ${APP_DISPLAY_NAME} ${APP_VERSION}"
+LangString NDM_WELCOME_TITLE ${LANG_ARABIC} "مرحبًا بك في ${APP_DISPLAY_NAME} ${APP_VERSION}"
+LangString NDM_WELCOME_TEXT ${LANG_ENGLISH} "This will install ${APP_DISPLAY_NAME} on your computer.$\r$\n$\r$\nPlease close all browsers (Firefox, Chrome, Edge) before you continue, so the browser add-on can be set up.$\r$\n$\r$\nIf ${APP_DISPLAY_NAME} is already installed, your settings and downloads are kept.$\r$\n$\r$\nClick Next to continue."
+LangString NDM_WELCOME_TEXT ${LANG_ARABIC} "سيتم تثبيت ${APP_DISPLAY_NAME} على جهازك.$\r$\n$\r$\nمن فضلك أغلق كل المتصفحات (Firefox و Chrome و Edge) قبل المتابعة حتى يتم إعداد إضافة المتصفح.$\r$\n$\r$\nإذا كان ${APP_DISPLAY_NAME} مثبتًا بالفعل فستبقى إعداداتك وتحميلاتك كما هي.$\r$\n$\r$\nاضغط التالي للمتابعة."
+LangString NDM_COMPONENTS_TOP ${LANG_ENGLISH} "Choose what to install. The add-ons are offered only for the browsers found on this computer."
+LangString NDM_COMPONENTS_TOP ${LANG_ARABIC} "اختر ما تريد تثبيته. الإضافات تظهر فقط للمتصفحات الموجودة على هذا الجهاز."
+LangString NDM_SEC_STARTMENU ${LANG_ENGLISH} "Start Menu"
+LangString NDM_SEC_STARTMENU ${LANG_ARABIC} "قائمة ابدأ"
+LangString NDM_SEC_DESKTOP ${LANG_ENGLISH} "Create an icon on Desktop"
+LangString NDM_SEC_DESKTOP ${LANG_ARABIC} "إنشاء أيقونة على سطح المكتب"
+LangString NDM_SEC_BROWSERS ${LANG_ENGLISH} "Browser extensions"
+LangString NDM_SEC_BROWSERS ${LANG_ARABIC} "إضافات المتصفح"
+LangString NDM_SEC_FIREFOX ${LANG_ENGLISH} "Firefox add-on"
+LangString NDM_SEC_FIREFOX ${LANG_ARABIC} "إضافة Firefox"
+LangString NDM_SEC_CHROME ${LANG_ENGLISH} "Chrome extension"
+LangString NDM_SEC_CHROME ${LANG_ARABIC} "إضافة Chrome"
+LangString NDM_SEC_EDGE ${LANG_ENGLISH} "Edge extension"
+LangString NDM_SEC_EDGE ${LANG_ARABIC} "إضافة Edge"
+LangString NDM_SEC_USERDATA ${LANG_ENGLISH} "Remove User Data"
+LangString NDM_SEC_USERDATA ${LANG_ARABIC} "حذف بيانات المستخدم"
+LangString NDM_CHROME_STEPS ${LANG_ENGLISH} "Add the extension to Chrome (only once, it stays after that):$\r$\n$\r$\n1. Turn on Developer mode (top right of the page that just opened)$\r$\n2. Click Load unpacked$\r$\n3. Pick the folder that just opened:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
+LangString NDM_CHROME_STEPS ${LANG_ARABIC} "إضافة الامتداد إلى Chrome (مرة واحدة فقط ويبقى بعدها):$\r$\n$\r$\n1. فعّل Developer mode (أعلى يمين الصفحة التي فُتحت)$\r$\n2. اضغط Load unpacked$\r$\n3. اختر المجلد الذي فُتح:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
+LangString NDM_EDGE_STEPS ${LANG_ENGLISH} "Add the extension to Edge (only once, it stays after that):$\r$\n$\r$\n1. Turn on Developer mode (left side of the page that just opened)$\r$\n2. Click Load unpacked$\r$\n3. Pick the folder that just opened:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
+LangString NDM_EDGE_STEPS ${LANG_ARABIC} "إضافة الامتداد إلى Edge (مرة واحدة فقط ويبقى بعدها):$\r$\n$\r$\n1. فعّل Developer mode (يسار الصفحة التي فُتحت)$\r$\n2. اضغط Load unpacked$\r$\n3. اختر المجلد الذي فُتح:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
 
 ; a macro clear files to cleanup installation folder
 !macro clearFiles
@@ -209,13 +256,24 @@ Section "${APP_DISPLAY_NAME}"
     ; Registry keys for app installation path and version
     WriteRegStr SHCTX "${REG_APP_KEY}" "InstallPath" "${INSTALL_DIR}"
     WriteRegStr SHCTX "${REG_APP_KEY}" "Version" "${APP_VERSION}"
+
+    ; the app opens in the language chosen on the first Setup page (read once, then deleted)
+    ${IfNot} ${Silent}
+        FileOpen $9 "${INSTALL_DIR}\installer-language.txt" w
+        ${If} $LANGUAGE == ${LANG_ARABIC}
+            FileWrite $9 "ar"
+        ${Else}
+            FileWrite $9 "en"
+        ${EndIf}
+        FileClose $9
+    ${EndIf}
 SectionEnd
 
-Section "Start Menu"
+Section "$(NDM_SEC_STARTMENU)"
     !insertmacro CreateStartMenu
 SectionEnd
 
-Section "Desktop Shortcut"
+Section "$(NDM_SEC_DESKTOP)"
     !insertmacro CreateDesktopShortcut
 SectionEnd
 
@@ -232,31 +290,38 @@ SectionEnd
     ${EndIf}
 !macroend
 
-SectionGroup "Browser extensions" SecBrowsers
-Section "Firefox add-on" SecFirefox
-    ; silent installs are in-app updates: never open browsers then
-    ${IfNot} ${Silent}
+SectionGroup "$(NDM_SEC_BROWSERS)" SecBrowsers
+Section "$(NDM_SEC_FIREFOX)" SecFirefox
+    ; the Mozilla-signed add-on ships with the app; registering it makes Firefox itself ask
+    ; "Net Download Manager added, enable?" on its next start. After that it stays installed.
+    ${If} ${FileExists} "${INSTALL_DIR}\app\resources\addons\net-download-manager-firefox.xpi"
+        WriteRegStr HKCU "Software\Mozilla\Firefox\Extensions" "net-download-manager@phkero" "${INSTALL_DIR}\app\resources\addons\net-download-manager-firefox.xpi"
+    ${ElseIfNot} ${Silent}
         !insertmacro findBrowser "firefox.exe" $1
         ${If} $1 != ""
             Exec '"$1" "${FIREFOX_ADDON_URL}"'
         ${EndIf}
     ${EndIf}
 SectionEnd
-Section "Chrome extension" SecChrome
-    ; silent installs are in-app updates: never open browsers then
+Section "$(NDM_SEC_CHROME)" SecChrome
+    ; Chrome / Edge only install store add-ons by themselves; for ours the user loads the folder once
+    ; (it stays installed after that, the folder sits inside the app and does not move)
     ${IfNot} ${Silent}
         !insertmacro findBrowser "chrome.exe" $1
         ${If} $1 != ""
-            Exec '"$1" "${CHROME_ADDON_URL}"'
+            Exec '"$1" "chrome://extensions"'
+            ExecShell "open" "${INSTALL_DIR}\app\resources\addons\chrome"
+            MessageBox MB_OK|MB_ICONINFORMATION "$(NDM_CHROME_STEPS)"
         ${EndIf}
     ${EndIf}
 SectionEnd
-Section "Edge extension" SecEdge
-    ; silent installs are in-app updates: never open browsers then
+Section "$(NDM_SEC_EDGE)" SecEdge
     ${IfNot} ${Silent}
         !insertmacro findBrowser "msedge.exe" $1
         ${If} $1 != ""
-            Exec '"$1" "${EDGE_ADDON_URL}"'
+            Exec '"$1" "edge://extensions"'
+            ExecShell "open" "${INSTALL_DIR}\app\resources\addons\chrome"
+            MessageBox MB_OK|MB_ICONINFORMATION "$(NDM_EDGE_STEPS)"
         ${EndIf}
     ${EndIf}
 SectionEnd
@@ -278,11 +343,12 @@ Function NdmUntickMissingBrowsers
     ${EndIf}
 FunctionEnd
 
-Section /o "un.Remove User Data"
+Section /o "un.$(NDM_SEC_USERDATA)"
     !insertmacro RemoveUserData
 SectionEnd
 
 Section "Uninstall"
+    DeleteRegValue HKCU "Software\Mozilla\Firefox\Extensions" "net-download-manager@phkero"
     SectionInstType RO
 
     !insertmacro closeApp

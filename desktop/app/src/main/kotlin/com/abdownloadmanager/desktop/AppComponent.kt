@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop
 
+import ir.amirab.util.compose.tr
 import com.abdownloadmanager.UpdateManager
 import com.abdownloadmanager.desktop.pages.addDownload.multiple.DesktopAddMultiDownloadComponent
 import com.abdownloadmanager.desktop.pages.addDownload.single.DesktopAddSingleDownloadComponent
@@ -557,7 +558,7 @@ class AppComponent(
                     sendNotification(
                         tag = "antivirus=${item.id}",
                         title = item.name.asStringSource(),
-                        description = "Microsoft Defender found a threat in this file and handled it".asStringSource(),
+                        description = tr("Microsoft Defender found a threat in this file and handled it", "برنامج Microsoft Defender وجد تهديدًا في هذا الملف وتعامل معه"),
                         type = NotificationType.Error,
                     )
                     return@launch
@@ -565,19 +566,19 @@ class AppComponent(
             }
             if (extract) {
                 val tag = "extract=${item.id}"
-                sendNotification(tag, item.name.asStringSource(), "Extracting...".asStringSource(), NotificationType.Loading(null))
+                sendNotification(tag, item.name.asStringSource(), tr("Extracting...", "جارٍ فك الضغط..."), NotificationType.Loading(null))
                 when (val result = ArchiveExtractor.extract(file)) {
                     is ArchiveExtractor.Result.Extracted -> {
                         if (extrasSettings.deleteArchiveAfterExtract.value) file.delete()
                         sendNotification(
                             tag, item.name.asStringSource(),
-                            "Extracted to ${result.folder.name}".asStringSource(), NotificationType.Success,
+                            tr("Extracted to ${result.folder.name}", "تم فك الضغط إلى ${result.folder.name}"), NotificationType.Success,
                         )
                     }
 
                     is ArchiveExtractor.Result.Failed -> sendNotification(
                         tag, item.name.asStringSource(),
-                        "Not extracted: ${result.reason}".asStringSource(), NotificationType.Warning,
+                        tr("Not extracted: ${result.reason}", "لم يتم فك الضغط: ${result.reason}"), NotificationType.Warning,
                     )
 
                     ArchiveExtractor.Result.NotAnArchive -> {}
@@ -608,7 +609,7 @@ class AppComponent(
                 sendNotification(
                     tag = "yt-dlp-update",
                     title = "yt-dlp".asStringSource(),
-                    description = "Updated to ${result.to}".asStringSource(),
+                    description = tr("Updated to ${result.to}", "تم التحديث إلى ${result.to}"),
                     type = NotificationType.Info,
                 )
             }
@@ -627,16 +628,16 @@ class AppComponent(
                 val minutes = ((resumeAt - System.currentTimeMillis()) / 60_000).coerceAtLeast(1)
                 sendNotification(
                     tag = "quota",
-                    title = "Download quota reached".asStringSource(),
-                    description = "Downloads paused, they continue in about $minutes minutes".asStringSource(),
+                    title = tr("Download quota reached", "تم الوصول إلى حد التحميل"),
+                    description = tr("Downloads paused, they continue in about $minutes minutes", "تم إيقاف التحميلات مؤقتًا، وستستمر بعد حوالي $minutes دقيقة"),
                     type = NotificationType.Warning,
                 )
             },
             onResumed = {
                 sendNotification(
                     tag = "quota",
-                    title = "Download quota".asStringSource(),
-                    description = "New period started, downloads resumed".asStringSource(),
+                    title = tr("Download quota", "حد التحميل"),
+                    description = tr("New period started, downloads resumed", "بدأت فترة جديدة، واستُؤنفت التحميلات"),
                     type = NotificationType.Info,
                 )
             },
@@ -1287,7 +1288,7 @@ class AppComponent(
         sendNotification(
             tag = tag,
             title = (if (knownPattern) "Playlist" else "Checking link").asStringSource(),
-            description = "Reading the page...".asStringSource(),
+            description = tr("Reading the page...", "جارٍ قراءة الصفحة..."),
             type = NotificationType.Loading(null),
         )
         return try {
@@ -1308,7 +1309,7 @@ class AppComponent(
             // fall back to adding the link as a single video
             sendNotification(
                 tag = tag,
-                title = "Playlist".asStringSource(),
+                title = tr("Playlist", "قائمة تشغيل"),
                 description = (e.message ?: "Could not read the playlist").asStringSource(),
                 type = NotificationType.Error,
             )

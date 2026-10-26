@@ -1,5 +1,6 @@
 package com.abdownloadmanager.shared.downloaderinui.torrent
 
+import ir.amirab.util.compose.tr
 import com.abdownloadmanager.resources.Res
 import com.abdownloadmanager.shared.downloaderinui.BasicDownloadItem
 import com.abdownloadmanager.shared.downloaderinui.CredentialAndItemMapper
@@ -267,7 +268,7 @@ class TorrentDownloaderInUi(
         )
     }
 
-    override val name: StringSource = "Torrent".asStringSource()
+    override val name: StringSource = tr("Torrent", "تورنت")
 
     override fun createLinkChecker(initialCredentials: TorrentDownloadCredentials) = TorrentLinkChecker(initialCredentials)
 

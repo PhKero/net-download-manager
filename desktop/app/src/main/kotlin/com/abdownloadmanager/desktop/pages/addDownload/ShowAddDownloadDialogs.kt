@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.addDownload
 
+import ir.amirab.util.compose.trs
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -76,7 +77,7 @@ private fun AddDownloadWindow(
                 alwaysOnTop = true,
                 minSize = DpSize(w.dp, h.dp),
                 windowController = rememberWindowController(
-                    title = "Download File Info",
+                    title = trs("Download File Info", "معلومات ملف التحميل"),
                 ),
             ) {
                 LaunchedEffect(Unit) {

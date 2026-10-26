@@ -1,5 +1,6 @@
 package com.abdownloadmanager.shared.downloaderinui.ytdlp
 
+import ir.amirab.util.compose.tr
 import com.abdownloadmanager.shared.downloaderinui.BasicDownloadItem
 import com.abdownloadmanager.shared.downloaderinui.DownloadSize
 import com.abdownloadmanager.shared.downloaderinui.DownloaderInUi
@@ -131,7 +132,7 @@ class YtDlpDownloaderInUi(
         )
     }
 
-    override val name: StringSource = "Video (yt-dlp)".asStringSource()
+    override val name: StringSource = tr("Video (yt-dlp)", "فيديو (yt-dlp)")
 
     override fun createLinkChecker(initialCredentials: YtDlpDownloadCredentials): YtDlpLinkChecker {
         return YtDlpLinkChecker(

@@ -12,3 +12,4 @@ local.properties
 
 # Net Download Manager: helper programs are copied in by update.ps1, not stored in git
 desktop/app/resources/windows/tools/
+desktop/app/resources/windows/addons/

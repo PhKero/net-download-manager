@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.extras
 
+import ir.amirab.util.compose.trs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,7 +78,7 @@ fun MiniSpeedWindow(appComponent: AppComponent) {
                 Spacer(Modifier.width(8.dp))
                 val speed = active.sumOf { it.speed.coerceAtLeast(0) }
                 val text = if (active.isEmpty()) {
-                    "No active downloads"
+                    trs("No active downloads", "لا توجد تحميلات نشطة")
                 } else {
                     "${convertPositiveSpeedToHumanReadable(speed, speedUnit)}  ·  ${active.size} active"
                 }

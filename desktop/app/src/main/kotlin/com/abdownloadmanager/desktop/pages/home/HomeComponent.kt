@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.home
 
+import ir.amirab.util.compose.tr
 import com.abdownloadmanager.desktop.*
 import com.abdownloadmanager.desktop.actions.*
 import com.abdownloadmanager.desktop.pages.home.sections.DownloadListCells
@@ -167,13 +168,13 @@ class HomeComponent(
 
     // IDM style extra toolbar buttons
     private val deleteCompletedAction = simpleAction(
-        title = "Delete Completed".asStringSource(),
+        title = tr("Delete Completed", "حذف المكتملة"),
         icon = MyIcons.clear,
     ) {
         requestDelete(downloadSystem.getFinishedDownloadIds())
     }
     private val tellAFriendAction = simpleAction(
-        title = "Tell a Friend".asStringSource(),
+        title = tr("Tell a Friend", "أخبر صديقًا"),
         icon = MyIcons.share,
     ) {
         URLOpener.openUrl(SharedConstants.projectWebsite)
@@ -196,7 +197,7 @@ class HomeComponent(
             separator()
             +downloadActions.deleteAction
         }
-        subMenu("Downloads".asStringSource()) {
+        subMenu(tr("Downloads", "التحميلات")) {
             +stopAllAction
             separator()
             subMenu(
@@ -224,7 +225,7 @@ class HomeComponent(
             +useSpeedLimiterAction
             +gotoSettingsAction
         }
-        subMenu("View".asStringSource()) {
+        subMenu(tr("View", "عرض")) {
             if (AppInfo.isInDebugMode()) {
                 +dummyException
                 +dummyMessage

@@ -1,5 +1,6 @@
 package com.abdownloadmanager.shared.action
 
+import ir.amirab.util.compose.tr
 import com.abdownloadmanager.resources.Res
 import com.abdownloadmanager.shared.pagemanager.*
 import com.abdownloadmanager.shared.pages.adddownload.AddDownloadCredentialsInUiProps
@@ -245,10 +246,10 @@ val supportActionGroup = MenuItem.SubMenu(
             URLOpener.openUrl(SharedConstants.projectSourceCode)
         }
         // Net Download Manager: releases and discussions live on our GitHub page
-        item("Releases".asStringSource(), MyIcons.speaker) {
+        item(tr("Releases", "الإصدارات"), MyIcons.speaker) {
             URLOpener.openUrl(SharedConstants.telegramChannelUrl)
         }
-        item("Discussions".asStringSource(), MyIcons.group) {
+        item(tr("Discussions", "النقاشات"), MyIcons.group) {
             URLOpener.openUrl(SharedConstants.telegramGroupUrl)
         }
     }

@@ -1,5 +1,7 @@
 package com.abdownloadmanager.desktop.pages.singleDownloadPage
 
+import ir.amirab.util.compose.trs
+import ir.amirab.util.compose.tr
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
@@ -59,15 +61,15 @@ enum class SingleDownloadPageSections(
 ) {
     // IDM style tab names
     Info(
-        "Download status".asStringSource(),
+        tr("Download status", "حالة التحميل"),
         MyIcons.info
     ),
     Settings(
-        "Speed Limiter".asStringSource(),
+        tr("Speed Limiter", "محدد السرعة"),
         MyIcons.fast,
     ),
     OnCompletion(
-        "Options on completion".asStringSource(),
+        tr("Options on completion", "خيارات عند الاكتمال"),
         MyIcons.flag
     ),
 }
@@ -350,7 +352,7 @@ private fun RenderPartInfo(
         ) {
             WithContentAlpha(0.75f) {
                 Text(
-                    "Start positions and download progress by connections",
+                    trs("Start positions and download progress by connections", "مواضع البدء وتقدم التحميل لكل اتصال"),
                     Modifier.padding(horizontal = horizontalPadding).padding(bottom = 4.dp),
                     fontSize = myTextSizes.sm,
                     maxLines = 1,
@@ -467,7 +469,7 @@ private fun RenderPartInfo(
                             .onClick { setOnlyActiveParts(!onlyActiveParts) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Only Actives")
+                        Text(trs("Only Actives", "النشطة فقط"))
                         Spacer(Modifier.width(4.dp))
                         CheckBox(onlyActiveParts, { setOnlyActiveParts(it) })
                     }
@@ -509,7 +511,7 @@ sealed class PartInfoCells : TableCell<IndexedValue<UiPart>> {
     data object Status : PartInfoCells() {
         override val id: String = "Status"
         // IDM calls this column "Info"
-        override val name: StringSource = "Info".asStringSource()
+        override val name: StringSource = tr("Info", "معلومات")
         override val size: CellSize = CellSize.Resizeable(100.dp..200.dp)
     }
 

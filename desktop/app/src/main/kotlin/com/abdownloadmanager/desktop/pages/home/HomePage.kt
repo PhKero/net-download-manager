@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.home
 
+import ir.amirab.util.compose.trs
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -324,7 +325,7 @@ fun HomePage(component: HomeComponent) {
                 ) {
                     // IDM style heading above the category tree
                     Text(
-                        "Categories",
+                        trs("Categories", "الفئات"),
                         Modifier.padding(start = 12.dp, bottom = 4.dp),
                         fontSize = myTextSizes.base,
                         fontWeight = FontWeight.SemiBold,

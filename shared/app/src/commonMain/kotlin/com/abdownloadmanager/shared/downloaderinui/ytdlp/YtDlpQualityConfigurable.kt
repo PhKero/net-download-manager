@@ -1,5 +1,6 @@
 package com.abdownloadmanager.shared.downloaderinui.ytdlp
 
+import ir.amirab.util.compose.tr
 import com.abdownloadmanager.shared.ui.configurable.item.EnumConfigurable
 import com.abdownloadmanager.shared.util.SizeAndSpeedUnitProvider
 import com.abdownloadmanager.shared.util.convertPositiveSizeToHumanReadable
@@ -37,8 +38,8 @@ fun createYtDlpQualityConfigurable(
         else listOf(label.asStringSource(), size).combineStringSources(" — ")
     }
     return EnumConfigurable(
-        title = "Quality".asStringSource(),
-        description = "Video quality to download. Sizes are estimates from the site".asStringSource(),
+        title = tr("Quality", "الجودة"),
+        description = tr("Video quality to download. Sizes are estimates from the site", "جودة الفيديو المطلوب تحميله. الأحجام تقديرية من الموقع"),
         backedBy = quality,
         itemTitle = ::title,
         possibleValues = YtDlpQuality.all,

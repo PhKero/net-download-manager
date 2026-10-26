@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.home
 
+import ir.amirab.util.compose.tr
 import com.abdownloadmanager.shared.util.ui.widget.MyIcon
 import com.abdownloadmanager.shared.util.ui.myColors
 import com.abdownloadmanager.shared.util.ui.theme.myTextSizes
@@ -127,12 +128,12 @@ private fun GroupActionButton(
 /** IDM button names on the toolbar (the menus keep the full names) */
 private fun toolbarLabelOf(icon: IconSource?, title: String): String {
     return when (icon) {
-        MyIcons.add -> "Add URL"
-        MyIcons.pause -> "Stop"
-        MyIcons.settings -> "Options"
-        MyIcons.queue -> "Scheduler"
-        MyIcons.queueStart -> "Start Queue"
-        MyIcons.queueStop -> "Stop Queue"
+        MyIcons.add -> tr("Add URL", "إضافة رابط").getString()
+        MyIcons.pause -> tr("Stop", "إيقاف").getString()
+        MyIcons.settings -> tr("Options", "الخيارات").getString()
+        MyIcons.queue -> tr("Scheduler", "المجدول").getString()
+        MyIcons.queueStart -> tr("Start Queue", "بدء الطابور").getString()
+        MyIcons.queueStop -> tr("Stop Queue", "إيقاف الطابور").getString()
         else -> title
     }
 }

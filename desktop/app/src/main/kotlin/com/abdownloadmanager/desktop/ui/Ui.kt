@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.ui
 
+import ir.amirab.util.compose.tr
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.application
 import com.abdownloadmanager.desktop.AppArguments
@@ -72,12 +73,29 @@ object Ui : KoinComponent {
     val fontManager: FontManager = get()
     val languageManager: LanguageManager = get()
     val notificationManager: NotificationManager = get()
+    /**
+     * The Setup asks "English or Arabic" and leaves the answer ("en" / "ar") in a small file next to the exe.
+     * Use it once, then the language can be changed in the app as usual.
+     */
+    private fun applyLanguageChosenInInstaller() {
+        runCatching {
+            val file = java.io.File(AppInfo.installationFolder ?: return, "installer-language.txt")
+            if (!file.exists()) return
+            val code = file.readText().trim()
+            file.delete()
+            languageManager.languageList.value
+                .firstOrNull { it.toLocaleString().startsWith(code) }
+                ?.let { languageManager.selectLanguage(it) }
+        }
+    }
+
     fun boot(
         appArguments: AppArguments,
     ) {
         themeManager.boot()
         fontManager.boot()
         languageManager.boot()
+        applyLanguageChosenInInstaller()
         if (!appArguments.startSilent) {
             appComponent.openHome()
         }
@@ -227,7 +245,7 @@ private fun SystemTray(
             AppInfo.displayName
         } else {
             buildString {
-                append(AppInfo.displayName).append(" - ").append(active.size).append(" downloading")
+                append(AppInfo.displayName).append(" - ").append(active.size).append(tr(" downloading", " قيد التحميل").getString())
                 active.take(5).forEach { item ->
                     append('\n').append(item.percent?.let { "$it%  " } ?: "").append(item.name.take(40))
                 }

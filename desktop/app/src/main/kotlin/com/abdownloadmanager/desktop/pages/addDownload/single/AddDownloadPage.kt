@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.addDownload.single
 
+import ir.amirab.util.compose.trs
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,7 +82,7 @@ fun AddDownloadPage(
                 }
             }
         }
-        IdmLabeledRow("URL") {
+        IdmLabeledRow(trs("URL", "الرابط")) {
             UrlTextField(
                 text = credentials.link,
                 setText = {
@@ -95,7 +96,7 @@ fun AddDownloadPage(
             Column(Modifier.weight(1f)) {
                 val useCategory by component.useCategory.collectAsState()
                 Spacer(Modifier.size(8.dp))
-                IdmLabeledRow("Category") {
+                IdmLabeledRow(trs("Category", "الفئة")) {
                 Row(
                     modifier = Modifier.height(IntrinsicSize.Max),
                     verticalAlignment = Alignment.CenterVertically,
@@ -123,7 +124,7 @@ fun AddDownloadPage(
                 val isFolderChanged by component.isFolderChangedResult.collectAsState()
                 val rememberFolderAsDefault by component.rememberFolderAsDefault.collectAsState()
                 Spacer(Modifier.size(8.dp))
-                IdmLabeledRow("Save As") {
+                IdmLabeledRow(trs("Save As", "حفظ باسم")) {
                 LocationTextField(
                     modifier = Modifier.fillMaxWidth(),
                     text = component.folder.collectAsState().value,
@@ -164,15 +165,15 @@ fun AddDownloadPage(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            if (categoryName != null) "Remember this path for \"$categoryName\" category"
-                            else "Remember this path",
+                            if (categoryName != null) trs("Remember this path for \"$categoryName\" category", "تذكّر هذا المسار لفئة \"$categoryName\"")
+                            else trs("Remember this path", "تذكّر هذا المسار"),
                             fontSize = myTextSizes.sm,
                         )
                     }
                 }
                 val name by component.name.collectAsState()
                 Spacer(Modifier.size(8.dp))
-                IdmLabeledRow("File name") {
+                IdmLabeledRow(trs("File name", "اسم الملف")) {
                 NameTextField(
                     text = name,
                     setText = {
@@ -494,7 +495,7 @@ private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
             val canAddToDownloads by component.canAddToDownloads.collectAsState()
             ActionButton(
                 // IDM button names
-                text = "Download Later",
+                text = trs("Download Later", "تحميل لاحقًا"),
                 modifier = Modifier,
                 enabled = canAddToDownloads,
                 onClick = {
@@ -507,7 +508,7 @@ private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
             )
             Spacer(Modifier.width(8.dp))
             PrimaryMainActionButton(
-                text = "Start Download",
+                text = trs("Start Download", "بدء التحميل"),
                 modifier = Modifier,
                 enabled = canAddToDownloads,
                 onClick = {

@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.about
 
+import ir.amirab.util.compose.tr
 import androidx.compose.foundation.*
 import com.abdownloadmanager.shared.util.ui.icon.MyIcons
 import com.abdownloadmanager.shared.util.ui.myColors
@@ -204,7 +205,7 @@ private fun SocialAndLinks(
         )
         SocialSmallButton(
             MyIcons.speaker,
-            "Releases".asStringSource(),
+            tr("Releases", "الإصدارات"),
             onClick = {
                 URLOpener.openUrl(SharedConstants.telegramChannelUrl)
             }
