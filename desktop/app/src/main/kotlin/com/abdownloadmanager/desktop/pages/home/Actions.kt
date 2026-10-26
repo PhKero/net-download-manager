@@ -124,14 +124,27 @@ private fun GroupActionButton(
     }
 }
 
+/** IDM button names on the toolbar (the menus keep the full names) */
+private fun toolbarLabelOf(icon: IconSource?, title: String): String {
+    return when (icon) {
+        MyIcons.add -> "Add URL"
+        MyIcons.pause -> "Stop"
+        MyIcons.settings -> "Options"
+        MyIcons.queue -> "Scheduler"
+        MyIcons.queueStart -> "Start Queue"
+        MyIcons.queueStop -> "Stop Queue"
+        else -> title
+    }
+}
+
 /** IDM style colorful toolbar: each kind of action keeps its own color in every theme */
 @Composable
 private fun toolbarTintOf(icon: IconSource): Color? {
     return when (icon) {
         MyIcons.resume, MyIcons.queueStart -> myColors.success
         MyIcons.pause, MyIcons.stop -> myColors.warning
-        MyIcons.queueStop, MyIcons.remove -> myColors.error
-        MyIcons.queue -> myColors.info
+        MyIcons.queueStop, MyIcons.remove, MyIcons.clear -> myColors.error
+        MyIcons.queue, MyIcons.add, MyIcons.share -> myColors.info
         else -> null
     }
 }
@@ -180,7 +193,7 @@ private fun ActionIconWithLabel(
                     }
                     if (showLabels) {
                         Spacer(Modifier.size(4.dp))
-                        Text(title.rememberString(), maxLines = 1, fontSize = myTextSizes.sm)
+                        Text(toolbarLabelOf(icon, title.rememberString()), maxLines = 1, fontSize = myTextSizes.sm)
                     }
                 }
             }

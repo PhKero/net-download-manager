@@ -502,13 +502,14 @@ private fun SimpleCellText(text: String) {
 sealed class PartInfoCells : TableCell<IndexedValue<UiPart>> {
     data object Number : PartInfoCells() {
         override val id: String = "#"
-        override val name: StringSource = "#".asStringSource()
+        override val name: StringSource = "N.".asStringSource()
         override val size: CellSize = CellSize.Fixed(32.dp)
     }
 
     data object Status : PartInfoCells() {
         override val id: String = "Status"
-        override val name: StringSource = Res.string.status.asStringSource()
+        // IDM calls this column "Info"
+        override val name: StringSource = "Info".asStringSource()
         override val size: CellSize = CellSize.Resizeable(100.dp..200.dp)
     }
 
@@ -526,10 +527,11 @@ sealed class PartInfoCells : TableCell<IndexedValue<UiPart>> {
 
     companion object {
         fun all(): List<PartInfoCells> {
+            // IDM order: N., Downloaded, Info
             return listOf(
                 Number,
-                Status,
                 Downloaded,
+                Status,
                 Total,
             )
         }
@@ -564,7 +566,9 @@ private fun RenderPropertyItem(propertyItem: SingleDownloadPagePropertyItem) {
                 maxLines = 1,
                 fontSize = myTextSizes.base,
                 color = when (propertyItem.valueState) {
-                    SingleDownloadPagePropertyItem.ValueType.Normal -> LocalContentColor.current
+                    // IDM shows the live status ("Receiving data...") in blue
+                    SingleDownloadPagePropertyItem.ValueType.Normal ->
+                        if (title.rememberString() == myStringResource(Res.string.status)) myColors.info else LocalContentColor.current
                     SingleDownloadPagePropertyItem.ValueType.Error -> myColors.error
                     SingleDownloadPagePropertyItem.ValueType.Success -> myColors.success
                 }

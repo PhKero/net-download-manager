@@ -11,6 +11,9 @@ import com.abdownloadmanager.shared.ui.widget.table.customtable.TableState
 import com.abdownloadmanager.desktop.utils.*
 import ir.amirab.util.compose.action.MenuItem
 import ir.amirab.util.compose.action.buildMenu
+import com.abdownloadmanager.shared.util.SharedConstants
+import ir.amirab.util.URLOpener
+import ir.amirab.util.compose.action.simpleAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -162,20 +165,37 @@ class HomeComponent(
     private val mainItem = MutableStateFlow<Long?>(null)
 
 
+    // IDM style extra toolbar buttons
+    private val deleteCompletedAction = simpleAction(
+        title = "Delete Completed".asStringSource(),
+        icon = MyIcons.clear,
+    ) {
+        requestDelete(downloadSystem.getFinishedDownloadIds())
+    }
+    private val tellAFriendAction = simpleAction(
+        title = "Tell a Friend".asStringSource(),
+        icon = MyIcons.share,
+    ) {
+        URLOpener.openUrl(SharedConstants.projectWebsite)
+    }
+
+    // IDM menu bar: Tasks, File, Downloads, View, Help
     val menu: List<MenuItem.SubMenu> = buildMenu {
-        subMenu(Res.string.file.asStringSource()) {
+        subMenu(Res.string.tasks.asStringSource()) {
             +newDownloadAction
-            +newDownloadFromClipboardAction
             +batchDownloadAction
+            +newDownloadFromClipboardAction
             separator()
             +requestExitAction
-
         }
-        subMenu(Res.string.tasks.asStringSource()) {
-//            +toggleQueueAction
-            +startQueueGroupAction
-            +stopQueueGroupAction
+        subMenu(Res.string.file.asStringSource()) {
+            +downloadActions.openFileAction
+            +downloadActions.resumeAction
+            +downloadActions.pauseAction
             separator()
+            +downloadActions.deleteAction
+        }
+        subMenu("Downloads".asStringSource()) {
             +stopAllAction
             separator()
             subMenu(
@@ -195,8 +215,15 @@ class HomeComponent(
                     requestDelete(downloadSystem.getAllDownloadIds())
                 }
             }
+            separator()
+            +openQueuesAction
+            +startQueueGroupAction
+            +stopQueueGroupAction
+            separator()
+            +useSpeedLimiterAction
+            +gotoSettingsAction
         }
-        subMenu(Res.string.tools.asStringSource()) {
+        subMenu("View".asStringSource()) {
             if (AppInfo.isInDebugMode()) {
                 +dummyException
                 +dummyMessage
@@ -207,9 +234,7 @@ class HomeComponent(
             if (Platform.isLinux()) {
                 +createDesktopEntryAction
             }
-            separator()
             +perHostSettings
-            +gotoSettingsAction
         }
         subMenu(Res.string.help.asStringSource()) {
             +supportActionGroup
@@ -413,19 +438,19 @@ class HomeComponent(
         "$metaKey I" to downloadActions.openDownloadDialogAction
     }
     val showLabels = appSettings.showIconLabels
-    // IDM toolbar order: Resume, Stop, Stop All, Delete | Options | Scheduler, Start Queue, Stop Queue
+    // IDM toolbar: Add URL, Resume, Stop, Stop All, Delete, Delete Completed, Options, Scheduler, Start Queue, Stop Queue, Tell a Friend
     val headerActions = buildMenu {
-        separator()
+        +newDownloadAction
         +downloadActions.resumeAction
         +downloadActions.pauseAction
         +stopAllAction
         +downloadActions.deleteAction
-        separator()
+        +deleteCompletedAction
         +gotoSettingsAction
-        separator()
         +openQueuesAction
         +startQueueGroupAction
         +stopQueueGroupAction
+        +tellAFriendAction
     }
 
     companion object {

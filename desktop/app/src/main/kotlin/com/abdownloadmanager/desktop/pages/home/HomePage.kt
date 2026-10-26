@@ -63,6 +63,7 @@ import com.abdownloadmanager.shared.util.ui.icon.MyIcons
 import com.abdownloadmanager.shared.util.ui.myColors
 import com.abdownloadmanager.shared.util.ui.theme.myShapes
 import com.abdownloadmanager.shared.util.ui.theme.myTextSizes
+import com.abdownloadmanager.shared.ui.widget.Text
 import com.abdownloadmanager.shared.util.ui.widget.MyIcon
 import ir.amirab.util.compose.IconSource
 import ir.amirab.util.compose.action.MenuItem
@@ -303,9 +304,7 @@ fun HomePage(component: HomeComponent) {
                     .padding(horizontal = 6.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AddUrlButton {
-                    component.requestEnterNewURL()
-                }
+                // "Add URL" is the first toolbar button, like IDM
                 Actions(
                     component.headerActions,
                     component.showLabels.collectAsState().value
@@ -323,6 +322,13 @@ fun HomePage(component: HomeComponent) {
                         .padding(top = 8.dp).width(categoriesWidth)
                         .verticalScroll(rememberScrollState())
                 ) {
+                    // IDM style heading above the category tree
+                    Text(
+                        "Categories",
+                        Modifier.padding(start = 12.dp, bottom = 4.dp),
+                        fontSize = myTextSizes.base,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                     Categories(
                         modifier = Modifier.fillMaxWidth(),
                         component = component,
