@@ -155,7 +155,7 @@ buildConfig {
     buildConfigField(
         "INTEGRATION_FIREFOX_EXTENSION_ID",
         provider {
-            "firefox-integration@abdownloadmanager.com"
+            "net-download-manager@phkero"
         }
     )
     buildConfigField(
