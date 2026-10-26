@@ -180,7 +180,8 @@ class HomeComponent(
     }
 
     // IDM menu bar: Tasks, File, Downloads, View, Help
-    val menu: List<MenuItem.SubMenu> = buildMenu {
+    // lazy: the File menu uses downloadActions, which is created further down in this class
+    val menu: List<MenuItem.SubMenu> by lazy { buildMenu {
         subMenu(Res.string.tasks.asStringSource()) {
             +newDownloadAction
             +batchDownloadAction
@@ -244,7 +245,7 @@ class HomeComponent(
             +checkForUpdateAction
             +openAboutAction
         }
-    }.filterIsInstance<MenuItem.SubMenu>()
+    }.filterIsInstance<MenuItem.SubMenu>() }
 
 
     private val shouldShowOptions = MutableStateFlow(false)
