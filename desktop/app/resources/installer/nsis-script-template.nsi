@@ -71,6 +71,9 @@ Function .onInit
 
 FunctionEnd
 
+; untick add-ons of browsers that are not installed (function defined further down)
+!define MUI_CUSTOMFUNCTION_GUIINIT NdmUntickMissingBrowsers
+
 ; configure instfiles page
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_INSTFILESPAGE_NOAUTOCLOSE
@@ -260,7 +263,7 @@ SectionEnd
 SectionGroupEnd
 
 ; untick the browsers that are not installed
-Function .onGUIInit
+Function NdmUntickMissingBrowsers
     !insertmacro findBrowser "firefox.exe" $1
     ${If} $1 == ""
         SectionSetFlags ${SecFirefox} 0
