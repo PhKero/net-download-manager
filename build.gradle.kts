@@ -18,6 +18,9 @@ val defaultSemVersion = "1.0.0"
 val fallBackVersion = "$defaultSemVersion-untagged"
 
 gitVersion {
+    // a version tag on the current commit wins over the branch name, so releases get their real
+    // version (the in-app updater compares it with the GitHub release)
+    preferTag = true
     on {
         branch(".+") {
             "$defaultSemVersion-${it.refInfo.shortenName}-snapshot"
