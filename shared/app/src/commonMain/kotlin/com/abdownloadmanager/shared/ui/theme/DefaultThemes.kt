@@ -173,8 +173,60 @@ object DefaultThemes {
     )
 
 
+    /** light theme with the blue / white look of classic Windows download managers */
+    val classicBlue = MyColors(
+        id = "classic_blue",
+        name = "Classic Blue",
+        primary = Color(0xFF2A6FD6),
+        primaryVariant = Color(0xFF1F57AD),
+        onPrimary = Color(0xFFFFFFFF),
+        secondary = Color(0xFF2A9D3A),
+        secondaryVariant = Color(0xFF1E7A2C),
+        onSecondary = Color(0xFFFFFFFF),
+        background = Color(0xFFFFFFFF),
+        onBackground = Color(0xFF1D3557),
+        surface = Color(0xFFE4EEFB),
+        onSurface = Color(0xFF1D3557),
+        error = Color(0xFFD93B2B),
+        onError = Color(0xFFFFFFFF),
+        success = Color(0xFF2A9D3A),
+        onSuccess = Color(0xFFFFFFFF),
+        warning = Color(0xFFE6A700),
+        onWarning = Color(0xFF1D3557),
+        info = Color(0xFF2A6FD6),
+        onInfo = Color(0xFFFFFFFF),
+        isLight = true
+    )
+
+    /** dark twin of [classicBlue], used when Windows is in dark mode */
+    val classicBlueDark = MyColors(
+        id = "classic_blue_dark",
+        name = "Classic Blue Dark",
+        primary = Color(0xFF4A8FEA),
+        primaryVariant = Color(0xFF6CA6F0),
+        onPrimary = Color(0xFFFFFFFF),
+        secondary = Color(0xFF3BC24F),
+        secondaryVariant = Color(0xFF5CD46E),
+        onSecondary = Color(0xFF0E1A2B),
+        background = Color(0xFF15202E),
+        onBackground = Color(0xFFDCE6F4),
+        surface = Color(0xFF1E2D40),
+        onSurface = Color(0xFFDCE6F4),
+        error = Color(0xFFF0584A),
+        onError = Color(0xFFFFFFFF),
+        success = Color(0xFF3BC24F),
+        onSuccess = Color(0xFF0E1A2B),
+        warning = Color(0xFFF2C14E),
+        onWarning = Color(0xFF0E1A2B),
+        info = Color(0xFF4A8FEA),
+        onInfo = Color(0xFFFFFFFF),
+        isLight = false
+    )
+
     fun getAll(): List<MyColors> {
         return listOf(
+            classicBlue,
+            classicBlueDark,
             dark,
             light,
             obsidian,

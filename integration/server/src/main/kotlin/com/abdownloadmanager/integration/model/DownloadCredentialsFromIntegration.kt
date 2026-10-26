@@ -31,6 +31,19 @@ data class HLSDownloadCredentialsFromIntegration(
     override val suggestedName: String? = null,
 ) : IDownloadCredentialsFromIntegration
 
+/** a video page (youtube etc.) that the app resolves with yt-dlp */
+@SerialName("ytdlp")
+@Serializable
+data class YtDlpDownloadCredentialsFromIntegration(
+    override val link: String,
+    val headers: Map<String, String>? = null,
+    override val downloadPage: String? = null,
+    override val suggestedName: String? = null,
+    val quality: String? = null,
+    /** the link is a playlist; the app adds every video of it */
+    val playlist: Boolean = false,
+) : IDownloadCredentialsFromIntegration
+
 @Serializable
 data class AddDownloadOptionsFromIntegration(
     val silentAdd: Boolean = false,

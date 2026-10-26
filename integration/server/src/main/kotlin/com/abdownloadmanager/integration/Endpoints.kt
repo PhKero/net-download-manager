@@ -3,6 +3,8 @@ package com.abdownloadmanager.integration
 import com.abdownloadmanager.integration.model.AddDownloadsFromIntegration
 import com.abdownloadmanager.integration.model.ApiQueueModel
 import com.abdownloadmanager.integration.model.NewDownloadTask
+import com.abdownloadmanager.integration.model.VideoInfoRequest
+import com.abdownloadmanager.integration.model.VideoInfoResponse
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
@@ -70,6 +72,11 @@ internal fun Application.setupRouting(
                 itemsToAdd.onFailure { it.printStackTrace() }
                 integrationHandler.addDownload(itemsToAdd.getOrThrow())
                 call.respondText("OK")
+            }
+            post("/video-info") {
+                val request = json.decodeFromString<VideoInfoRequest>(call.receiveText())
+                val response = integrationHandler.videoInfo(request)
+                call.respondText(json.encodeToString(VideoInfoResponse.serializer(), response))
             }
             post("/ping") {
                 call.respondText("pong")

@@ -22,6 +22,7 @@ import com.abdownloadmanager.desktop.pages.editdownload.EditDownloadWindow
 import com.abdownloadmanager.desktop.pages.enterurl.EnterNewDownloadWindow
 import com.abdownloadmanager.desktop.pages.extenallibs.ShowOpenSourceLibraries
 import com.abdownloadmanager.desktop.pages.home.HomeWindow
+import com.abdownloadmanager.desktop.extras.MiniSpeedWindow
 import com.abdownloadmanager.desktop.pages.newQueue.NewQueueDialog
 import com.abdownloadmanager.desktop.pages.perhostsettings.PerHostSettingsWindow
 import com.abdownloadmanager.desktop.pages.poweractionalert.PowerActionAlert
@@ -129,6 +130,7 @@ object Ui : KoinComponent {
                 PowerActionAlert(appComponent)
                 PerHostSettingsWindow(appComponent)
                 DownloadErrorDialog(appComponent)
+                MiniSpeedWindow(appComponent)
             }
         }
     }

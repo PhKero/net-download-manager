@@ -3,6 +3,8 @@ package com.abdownloadmanager.integration
 import com.abdownloadmanager.integration.model.AddDownloadsFromIntegration
 import com.abdownloadmanager.integration.model.ApiQueueModel
 import com.abdownloadmanager.integration.model.NewDownloadTask
+import com.abdownloadmanager.integration.model.VideoInfoRequest
+import com.abdownloadmanager.integration.model.VideoInfoResponse
 
 interface IntegrationHandler{
     /**
@@ -20,4 +22,7 @@ interface IntegrationHandler{
      * simply add the download using download system
      */
     suspend fun addDownload(task: NewDownloadTask): Long
+
+    /** what is on a page (single video with its qualities, or a playlist), for the browser's quality menu */
+    suspend fun videoInfo(request: VideoInfoRequest): VideoInfoResponse
 }

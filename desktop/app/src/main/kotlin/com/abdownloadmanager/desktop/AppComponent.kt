@@ -67,6 +67,18 @@ import ir.amirab.downloader.queue.QueueManager
 import ir.amirab.util.compose.IIconResolver
 import ir.amirab.util.compose.StringSource
 import ir.amirab.util.compose.asStringSource
+import ir.amirab.downloader.downloaditem.IDownloadCredentials
+import ir.amirab.downloader.downloaditem.ytdlp.YtDlpDownloadCredentials
+import com.abdownloadmanager.shared.downloaderinui.ytdlp.YtDlpPlaylistExpander
+import com.abdownloadmanager.desktop.extras.AntivirusScanner
+import com.abdownloadmanager.desktop.extras.ClipboardMonitor
+import com.abdownloadmanager.desktop.extras.ExtrasSettings
+import com.abdownloadmanager.desktop.extras.YtDlpUpdater
+import com.abdownloadmanager.desktop.extras.DownloadQuota
+import com.abdownloadmanager.desktop.extras.MarkOfTheWeb
+import com.abdownloadmanager.desktop.extras.SpeedSchedule
+import com.abdownloadmanager.desktop.extras.ArchiveExtractor
+import java.io.File
 import ir.amirab.util.coroutines.launchWithDeferred
 import ir.amirab.util.desktop.poweraction.PowerActionConfig
 import ir.amirab.util.flow.mapStateFlow
@@ -530,6 +542,117 @@ class AppComponent(
         }
     }
 
+    private val extrasSettings: ExtrasSettings by inject()
+
+    /** antivirus first, then (only for clean files) extraction */
+    private fun scanWithAntivirus(item: IDownloadItem) {
+        val file = File(item.folder, item.name)
+        val scan = extrasSettings.antivirusScan.value
+        val extract = extrasSettings.autoExtract.value && ArchiveExtractor.isArchive(file)
+        if (!scan && !extract) return
+        scope.launch {
+            if (scan) {
+                val result = AntivirusScanner.scan(file)
+                if (result is AntivirusScanner.Result.ThreatFound) {
+                    sendNotification(
+                        tag = "antivirus=${item.id}",
+                        title = item.name.asStringSource(),
+                        description = "Microsoft Defender found a threat in this file and handled it".asStringSource(),
+                        type = NotificationType.Error,
+                    )
+                    return@launch
+                }
+            }
+            if (extract) {
+                val tag = "extract=${item.id}"
+                sendNotification(tag, item.name.asStringSource(), "Extracting...".asStringSource(), NotificationType.Loading(null))
+                when (val result = ArchiveExtractor.extract(file)) {
+                    is ArchiveExtractor.Result.Extracted -> {
+                        if (extrasSettings.deleteArchiveAfterExtract.value) file.delete()
+                        sendNotification(
+                            tag, item.name.asStringSource(),
+                            "Extracted to ${result.folder.name}".asStringSource(), NotificationType.Success,
+                        )
+                    }
+
+                    is ArchiveExtractor.Result.Failed -> sendNotification(
+                        tag, item.name.asStringSource(),
+                        "Not extracted: ${result.reason}".asStringSource(), NotificationType.Warning,
+                    )
+
+                    ArchiveExtractor.Result.NotAnArchive -> {}
+                }
+            }
+        }
+    }
+
+    private fun onLinkCopied(link: String) {
+        scope.launch {
+            val downloader = downloaderInUiRegistry.bestMatchForThisLink(link) ?: return@launch
+            val credentials = downloader.createMinimumCredentials(link)
+            val links = expandIfPlaylist(credentials) ?: listOf(AddDownloadCredentialsInUiProps(credentials = credentials))
+            openAddDownloadDialog(links = links)
+        }
+    }
+
+    private fun updateYtDlpIfDue() {
+        val day = 24 * 60 * 60 * 1000L
+        if (!extrasSettings.ytDlpAutoUpdate.value) return
+        if (System.currentTimeMillis() - extrasSettings.ytDlpLastUpdateCheck.value < day) return
+        scope.launch {
+            val result = YtDlpUpdater.update()
+            if (result !is YtDlpUpdater.Result.Failed) {
+                extrasSettings.ytDlpLastUpdateCheck.value = System.currentTimeMillis()
+            }
+            if (result is YtDlpUpdater.Result.Updated) {
+                sendNotification(
+                    tag = "yt-dlp-update",
+                    title = "yt-dlp".asStringSource(),
+                    description = "Updated to ${result.to}".asStringSource(),
+                    type = NotificationType.Info,
+                )
+            }
+        }
+    }
+
+    init {
+        ClipboardMonitor(extrasSettings.clipboardMonitor, ::onLinkCopied).start(scope)
+        updateYtDlpIfDue()
+        DownloadQuota(
+            downloadSystem = downloadSystem,
+            enabled = extrasSettings.quotaEnabled,
+            megabytes = extrasSettings.quotaMegabytes,
+            periodMinutes = extrasSettings.quotaPeriodMinutes,
+            onLimitReached = { resumeAt ->
+                val minutes = ((resumeAt - System.currentTimeMillis()) / 60_000).coerceAtLeast(1)
+                sendNotification(
+                    tag = "quota",
+                    title = "Download quota reached".asStringSource(),
+                    description = "Downloads paused, they continue in about $minutes minutes".asStringSource(),
+                    type = NotificationType.Warning,
+                )
+            },
+            onResumed = {
+                sendNotification(
+                    tag = "quota",
+                    title = "Download quota".asStringSource(),
+                    description = "New period started, downloads resumed".asStringSource(),
+                    type = NotificationType.Info,
+                )
+            },
+        ).start(scope)
+        SpeedSchedule(
+            downloadManager = downloadSystem.downloadManager,
+            enabled = extrasSettings.speedScheduleEnabled,
+            from = extrasSettings.speedScheduleFrom,
+            to = extrasSettings.speedScheduleTo,
+            limitKb = extrasSettings.speedScheduleLimitKb,
+            userLimit = {
+                if (appRepository.isSpeedLimitApplied.value) appRepository.speedLimiter.value.coerceAtLeast(1) else 0
+            },
+        ).start(scope)
+    }
+
     init {
         downloadSystem.downloadEvents
             .filterIsInstance<DownloadManagerEvents.OnJobRemoved>()
@@ -634,6 +757,11 @@ class AppComponent(
             )
         }
         if (it is DownloadManagerEvents.OnJobCompleted) {
+            if (extrasSettings.markOfTheWeb.value) {
+                val item = it.downloadItem
+                MarkOfTheWeb.apply(File(item.folder, item.name), hostUrl = item.link, referrerUrl = item.downloadPage)
+            }
+            scanWithAntivirus(it.downloadItem)
             sendNotification(
                 tag = "downloadId=${it.downloadItem.id}",
                 title = it.downloadItem.name.asStringSource(),
@@ -1138,18 +1266,55 @@ class AppComponent(
                 },
                 onRequestFinished = { credentials ->
                     scope.launch {
-                        openAddDownloadDialog(
-                            links = listOf(
-                                AddDownloadCredentialsInUiProps(
-                                    credentials = credentials
-                                )
-                            ),
+                        val links = expandIfPlaylist(credentials) ?: listOf(
+                            AddDownloadCredentialsInUiProps(
+                                credentials = credentials
+                            )
                         )
+                        openAddDownloadDialog(links = links)
                     }
                 }
             )
         }
     ).subscribeAsStateFlow()
+
+    /** a pasted youtube playlist / channel link opens the multi-download dialog with all of its videos */
+    private suspend fun expandIfPlaylist(credentials: IDownloadCredentials): List<AddDownloadCredentialsInUiProps>? {
+        if (credentials !is YtDlpDownloadCredentials) return null
+        val knownPattern = YtDlpPlaylistExpander.isPlaylistLink(credentials.link)
+        if (!knownPattern && YtDlpPlaylistExpander.isObviouslySingleVideo(credentials.link)) return null
+        val tag = "playlist:${credentials.link}"
+        sendNotification(
+            tag = tag,
+            title = (if (knownPattern) "Playlist" else "Checking link").asStringSource(),
+            description = "Reading the page...".asStringSource(),
+            type = NotificationType.Loading(null),
+        )
+        return try {
+            val rows = if (knownPattern) {
+                YtDlpPlaylistExpander.expand(credentials.link, credentials.quality)
+            } else {
+                // any other site: yt-dlp tells whether the page is a list
+                YtDlpPlaylistExpander.expandIfAnyPlaylist(credentials.link, credentials.quality)
+            }
+            sendNotification(
+                tag = tag,
+                title = (if (rows != null) "Playlist" else "Video").asStringSource(),
+                description = (if (rows != null) "${rows.size} videos found" else "Single video").asStringSource(),
+                type = NotificationType.Success,
+            )
+            rows
+        } catch (e: Exception) {
+            // fall back to adding the link as a single video
+            sendNotification(
+                tag = tag,
+                title = "Playlist".asStringSource(),
+                description = (e.message ?: "Could not read the playlist").asStringSource(),
+                type = NotificationType.Error,
+            )
+            null
+        }
+    }
 
     override fun openEnterNewURLWindow() {
         scope.launch {

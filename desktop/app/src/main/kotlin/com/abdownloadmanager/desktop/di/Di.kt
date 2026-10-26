@@ -33,6 +33,7 @@ import com.abdownloadmanager.desktop.utils.proxy.DesktopSystemProxySelectorProvi
 import com.abdownloadmanager.desktop.utils.proxy.ProxyCachingConfig
 import com.abdownloadmanager.desktop.utils.renderapi.CustomRenderApi
 import com.abdownloadmanager.integration.model.HLSDownloadCredentialsFromIntegration
+import com.abdownloadmanager.integration.model.YtDlpDownloadCredentialsFromIntegration
 import com.abdownloadmanager.integration.model.HttpDownloadCredentialsFromIntegration
 import com.abdownloadmanager.integration.model.IDownloadCredentialsFromIntegration
 import com.arkivanov.decompose.DefaultComponentContext
@@ -88,7 +89,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import com.abdownloadmanager.updatechecker.GithubUpdateChecker
+import com.abdownloadmanager.updatechecker.NoUpdateChecker
 import com.abdownloadmanager.updatechecker.UpdateChecker
 import ir.amirab.util.AppVersionTracker
 import com.abdownloadmanager.shared.util.appinfo.PreviousVersion
@@ -127,6 +128,13 @@ import ir.amirab.downloader.downloaditem.DownloadJob
 import ir.amirab.downloader.downloaditem.IDownloadCredentials
 import ir.amirab.downloader.downloaditem.IDownloadItem
 import ir.amirab.downloader.downloaditem.hls.HLSDownloader
+import ir.amirab.downloader.downloaditem.ytdlp.YtDlpDownloader
+import ir.amirab.downloader.downloaditem.torrent.TorrentDownloader
+import com.abdownloadmanager.shared.downloaderinui.torrent.TorrentDownloaderInUi
+import com.abdownloadmanager.desktop.extras.ExtrasSettings
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineScope
+import com.abdownloadmanager.shared.downloaderinui.ytdlp.YtDlpDownloaderInUi
 import ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials
 import ir.amirab.downloader.downloaditem.http.HttpDownloadItem
 import ir.amirab.downloader.downloaditem.http.HttpDownloader
@@ -242,7 +250,25 @@ val downloaderModule = module {
         HttpDownloaderInUi(get(), get())
     }
     single {
+        YtDlpDownloader()
+    }
+    single {
+        TorrentDownloader()
+    }
+    single {
+        TorrentDownloaderInUi(get(), get())
+    }
+    single {
+        ExtrasSettings(CoroutineScope(SupervisorJob()))
+    }
+    single {
+        YtDlpDownloaderInUi(get(), get())
+    }
+    single {
         DownloaderInUiRegistry().apply {
+            add(get<TorrentDownloaderInUi>())
+            // first, so links of known video sites are opened with yt-dlp automatically
+            add(get<YtDlpDownloaderInUi>())
             add(get<HttpDownloaderInUi>())
             add(get<HLSDownloaderInUi>())
         }
@@ -251,6 +277,8 @@ val downloaderModule = module {
         DownloaderRegistry().apply {
             add(get<HttpDownloader>())
             add(get<HLSDownloader>())
+            add(get<YtDlpDownloader>())
+            add(get<TorrentDownloader>())
         }
     }
     single {
@@ -417,6 +445,10 @@ val jsonModule = module {
                         HLSDownloadCredentialsFromIntegration::class,
                         HLSDownloadCredentialsFromIntegration.serializer()
                     )
+                    subclass(
+                        YtDlpDownloadCredentialsFromIntegration::class,
+                        YtDlpDownloadCredentialsFromIntegration.serializer()
+                    )
                     defaultDeserializer {
                         HttpDownloadCredentialsFromIntegration.serializer()
                     }
@@ -455,16 +487,8 @@ val updaterModule = module {
         )
     }
     single<UpdateChecker> {
-        GithubUpdateChecker(
-            AppVersion.get(),
-            githubApi = GithubApi(
-                owner = SharedConstants.projectGithubOwner,
-                repo = SharedConstants.projectGithubRepo,
-                client = OkHttpClient
-                    .Builder()
-                    .build()
-            )
-        )
+        // custom build: never offer the upstream release, it would remove our features
+        NoUpdateChecker(AppVersion.get())
     }
     single {
         UpdateManager(

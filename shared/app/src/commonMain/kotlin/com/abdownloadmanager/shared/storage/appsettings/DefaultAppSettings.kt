@@ -9,9 +9,10 @@ import ir.amirab.downloader.DownloadSettings
 expect object PlatformDefaultSettings : DefaultAppSettings
 
 abstract class DefaultAppSettings {
-    open val theme: String get() = "dark"
-    open val defaultDarkTheme: String get() = "dark"
-    open val defaultLightTheme: String get() = "light"
+    // custom build: follow Windows light / dark mode with the IDM-like blue themes
+    open val theme: String get() = "system"
+    open val defaultDarkTheme: String get() = "classic_blue_dark"
+    open val defaultLightTheme: String get() = "classic_blue"
     open val language: String? get() = null
     open val font: String? get() = null
     open val uiScale: Float? get() = null

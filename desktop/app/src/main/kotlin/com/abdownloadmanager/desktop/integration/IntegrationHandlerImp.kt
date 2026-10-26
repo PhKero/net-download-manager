@@ -14,6 +14,10 @@ import ir.amirab.downloader.NewDownloadItemProps
 import ir.amirab.downloader.downloaditem.EmptyContext
 import ir.amirab.downloader.downloaditem.hls.HLSDownloadCredentials
 import ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials
+import ir.amirab.downloader.downloaditem.ytdlp.YtDlpDownloadCredentials
+import ir.amirab.downloader.downloaditem.ytdlp.YtDlpBinary
+import ir.amirab.downloader.downloaditem.ytdlp.YtDlpQuality
+import com.abdownloadmanager.shared.downloaderinui.ytdlp.YtDlpPlaylistExpander
 import ir.amirab.downloader.queue.QueueManager
 import ir.amirab.downloader.utils.OnDuplicateStrategy
 import org.koin.core.component.KoinComponent
@@ -32,8 +36,12 @@ class IntegrationHandlerImp : IntegrationHandler, KoinComponent {
         val list = request.items
         val options = request.options
         appComponent.externalCredentialComingIntoApp(
-            list.map {
-                convertToDownloadSystemCredentials(it)
+            list.flatMap {
+                if (it is YtDlpDownloadCredentialsFromIntegration && it.playlist) {
+                    expandPlaylist(it)
+                } else {
+                    listOf(convertToDownloadSystemCredentials(it))
+                }
             },
             options = ImportOptions(
                 silentImport = if (options.silentAdd) {
@@ -89,6 +97,59 @@ class IntegrationHandlerImp : IntegrationHandler, KoinComponent {
         return id
     }
 
+    // the bar asks again each time the menu opens; yt-dlp takes seconds, so remember recent answers
+    private val videoInfoCache = object : LinkedHashMap<String, Pair<Long, VideoInfoResponse>>(32, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Long, VideoInfoResponse>>?) = size > 50
+    }
+
+    override suspend fun videoInfo(request: VideoInfoRequest): VideoInfoResponse {
+        val cacheTime = 10 * 60 * 1000L
+        synchronized(videoInfoCache) {
+            videoInfoCache[request.link]?.let { (time, response) ->
+                if (System.currentTimeMillis() - time < cacheTime) return response
+            }
+        }
+        val credentials = YtDlpDownloadCredentials(link = request.link, downloadPage = request.downloadPage)
+        val response = try {
+            when (val result = YtDlpBinary.lookup(credentials)) {
+                is YtDlpBinary.Lookup.Video -> VideoInfoResponse(
+                    type = "video",
+                    title = result.info.title,
+                    duration = result.info.duration,
+                    qualities = result.info.qualityOptions.map {
+                        VideoQualityModel(
+                            quality = it.quality,
+                            label = YtDlpQuality.labelFor(it.quality, result.info),
+                            size = it.estimatedSize,
+                        )
+                    },
+                )
+
+                is YtDlpBinary.Lookup.Playlist -> VideoInfoResponse(
+                    type = "playlist",
+                    title = result.playlist.title,
+                    count = result.playlist.entries.size,
+                )
+            }
+        } catch (e: Exception) {
+            // errors are not cached, the next try may succeed
+            return VideoInfoResponse(type = "error", error = e.message ?: "yt-dlp failed")
+        }
+        synchronized(videoInfoCache) {
+            videoInfoCache[request.link] = System.currentTimeMillis() to response
+        }
+        return response
+    }
+
+    private suspend fun expandPlaylist(item: YtDlpDownloadCredentialsFromIntegration): List<AddDownloadCredentialsInUiProps> {
+        return YtDlpPlaylistExpander.expand(
+            link = item.link,
+            quality = item.quality,
+            headers = item.headers,
+            downloadPage = item.downloadPage,
+        )
+    }
+
     companion object {
         private fun convertToDownloadSystemCredentials(it: IDownloadCredentialsFromIntegration): AddDownloadCredentialsInUiProps {
             val credentials = when (it) {
@@ -105,6 +166,15 @@ class IntegrationHandlerImp : IntegrationHandler, KoinComponent {
                         link = it.link,
                         headers = it.headers,
                         downloadPage = it.downloadPage,
+                    )
+                }
+
+                is YtDlpDownloadCredentialsFromIntegration -> {
+                    YtDlpDownloadCredentials(
+                        link = it.link,
+                        headers = it.headers,
+                        downloadPage = it.downloadPage,
+                        quality = it.quality,
                     )
                 }
             }

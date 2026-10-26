@@ -10,6 +10,8 @@ import com.abdownloadmanager.shared.util.mvi.ContainsEffects
 import com.abdownloadmanager.shared.util.mvi.supportEffects
 import com.arkivanov.decompose.ComponentContext
 import ir.amirab.downloader.downloaditem.IDownloadCredentials
+import ir.amirab.downloader.downloaditem.ytdlp.WebPageProbe
+import com.abdownloadmanager.shared.downloaderinui.ytdlp.YtDlpDownloaderInUi
 import ir.amirab.util.flow.combineStateFlows
 import ir.amirab.util.flow.mapStateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,12 +97,29 @@ open class BaseEnterNewURLComponent(
     }
 
     fun newDownloadEntered() {
-        val downloader = downloaderToPickup.value ?: return
+        val picked = downloaderToPickup.value ?: return
         val link = url.value
-        onRequestFinished(
-            downloader.createMinimumCredentials(link)
-        )
-        onCloseRequest()
+        scope.launch {
+            val downloader = if (downloaderSelection.value == DownloaderSelection.Auto) {
+                videoDownloaderIfWebPage(link, picked) ?: picked
+            } else {
+                picked
+            }
+            onRequestFinished(
+                downloader.createMinimumCredentials(link)
+            )
+            onCloseRequest()
+        }
+    }
+
+    /**
+     * Like IDM, a link to a web page (instead of a file) means "the video on this page",
+     * so in Auto mode such links go to yt-dlp, which supports most video / audio sites.
+     */
+    private suspend fun videoDownloaderIfWebPage(link: String, picked: TADownloaderInUI): TADownloaderInUI? {
+        val video = downloaderInUiRegistry.getAll().firstOrNull { it is YtDlpDownloaderInUi } ?: return null
+        if (picked === video) return null
+        return video.takeIf { WebPageProbe.isWebPage(link) }
     }
 
     val possibleValues = buildList {

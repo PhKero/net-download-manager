@@ -295,6 +295,27 @@ fun HomePage(component: HomeComponent) {
                     .height(1.dp)
                     .background(myColors.surface)
             )
+            // IDM style: one toolbar across the whole window, above the categories and the list
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(myColors.surface)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AddUrlButton {
+                    component.requestEnterNewURL()
+                }
+                Actions(
+                    component.headerActions,
+                    component.showLabels.collectAsState().value
+                )
+            }
+            Spacer(
+                Modifier.fillMaxWidth()
+                    .height(1.dp)
+                    .background(myColors.onBackground / 10)
+            )
             Row {
                 val categoriesWidth by component.categoriesWidth.collectAsState()
                 Column(
@@ -321,19 +342,7 @@ fun HomePage(component: HomeComponent) {
                 ) { delta ->
                     component.setCategoriesWidth { it + delta }
                 }
-                Column(Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Spacer(Modifier.size(4.dp))
-                        AddUrlButton {
-                            component.requestEnterNewURL()
-                        }
-                        Actions(
-                            component.headerActions,
-                            component.showLabels.collectAsState().value
-                        )
-                    }
+                Column(Modifier.weight(1f).padding(top = 4.dp)) {
                     var lastSelected by remember { mutableStateOf(null as Long?) }
                     DownloadList(
                         modifier = Modifier

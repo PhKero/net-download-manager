@@ -24,6 +24,8 @@ import com.abdownloadmanager.shared.util.ui.MultiplatformHorizontalScrollbar
 import com.abdownloadmanager.shared.util.ui.needScroll
 import ir.amirab.util.compose.IconSource
 import ir.amirab.util.compose.StringSource
+import androidx.compose.ui.graphics.Color
+import com.abdownloadmanager.shared.util.ui.icon.MyIcons
 
 @Composable
 fun Actions(
@@ -122,6 +124,18 @@ private fun GroupActionButton(
     }
 }
 
+/** IDM style colorful toolbar: each kind of action keeps its own color in every theme */
+@Composable
+private fun toolbarTintOf(icon: IconSource): Color? {
+    return when (icon) {
+        MyIcons.resume, MyIcons.queueStart -> myColors.success
+        MyIcons.pause, MyIcons.stop -> myColors.warning
+        MyIcons.queueStop, MyIcons.remove -> myColors.error
+        MyIcons.queue -> myColors.info
+        else -> null
+    }
+}
+
 @Composable
 private fun ActionIconWithLabel(
     title: StringSource,
@@ -139,21 +153,33 @@ private fun ActionIconWithLabel(
                 .ifThen(!enabled) {
                     alpha(0.5f)
                 }
-                .padding(if (showLabels) 8.dp else 12.dp),
+                .widthIn(min = if (showLabels) 64.dp else 0.dp)
+                .padding(horizontal = if (showLabels) 10.dp else 12.dp, vertical = if (showLabels) 6.dp else 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             WithContentColor(myColors.onBackground) {
                 WithContentAlpha(1f) {
                     icon?.let {
-                        val iconSize = if (showLabels) 16.dp else 24.dp
-                        MyIcon(
-                            icon = it,
-                            contentDescription = null,
-                            modifier = Modifier.size(iconSize)
-                        )
+                        // large icon with the label under it, like the classic IDM toolbar
+                        val iconSize = 24.dp
+                        val tint = toolbarTintOf(it)
+                        if (tint != null) {
+                            MyIcon(
+                                icon = it,
+                                contentDescription = null,
+                                modifier = Modifier.size(iconSize),
+                                tint = tint,
+                            )
+                        } else {
+                            MyIcon(
+                                icon = it,
+                                contentDescription = null,
+                                modifier = Modifier.size(iconSize)
+                            )
+                        }
                     }
                     if (showLabels) {
-                        Spacer(Modifier.size(2.dp))
+                        Spacer(Modifier.size(4.dp))
                         Text(title.rememberString(), maxLines = 1, fontSize = myTextSizes.sm)
                     }
                 }

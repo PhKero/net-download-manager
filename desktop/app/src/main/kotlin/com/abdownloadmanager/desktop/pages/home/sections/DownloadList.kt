@@ -452,12 +452,13 @@ sealed interface DownloadListCells : TableCell<IDownloadItemState> {
 
     companion object {
         val allCells: List<DownloadListCells> = listOf(
+            // IDM order: name, size, status, time left, transfer rate, date
             Check,
             Name,
             Size,
             Status,
-            Speed,
             TimeLeft,
+            Speed,
             DateAdded,
             DateStarted,
             DateFinished,

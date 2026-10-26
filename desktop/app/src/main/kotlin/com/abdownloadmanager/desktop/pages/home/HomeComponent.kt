@@ -415,20 +415,19 @@ class HomeComponent(
         "$metaKey I" to downloadActions.openDownloadDialogAction
     }
     val showLabels = appSettings.showIconLabels
+    // IDM toolbar order: Resume, Stop, Stop All, Delete | Options | Scheduler, Start Queue, Stop Queue
     val headerActions = buildMenu {
         separator()
         +downloadActions.resumeAction
         +downloadActions.pauseAction
-        separator()
-        +startQueueGroupAction
-        +stopQueueGroupAction
-        +openQueuesAction
-        separator()
         +stopAllAction
-        separator()
         +downloadActions.deleteAction
         separator()
         +gotoSettingsAction
+        separator()
+        +openQueuesAction
+        +startQueueGroupAction
+        +stopQueueGroupAction
     }
 
     companion object {
