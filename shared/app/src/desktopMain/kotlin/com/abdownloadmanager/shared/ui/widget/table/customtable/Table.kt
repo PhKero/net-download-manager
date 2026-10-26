@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -166,12 +168,28 @@ fun <T, C : TableCell<T>> Table(
                                 key = if (key != null) { _, item -> key(item) } else null
                             ) { index, item ->
                                 scope.wrapItem(index, item) {
+                                    // IDM style grid: a thin line under each row and between columns
+                                    val gridColor = myColors.onBackground / 0.08f
                                     Row(
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .height(IntrinsicSize.Max)
+                                            .drawBehind {
+                                                drawLine(
+                                                    gridColor,
+                                                    Offset(0f, size.height - 0.5f),
+                                                    Offset(size.width, size.height - 0.5f),
+                                                    1f,
+                                                )
+                                            },
                                     ) {
                                         cells.forEach { cell ->
                                             Box(
                                                 Modifier.width(customWidths[cell] ?: cell.size.defaultWidth)
+                                                    .fillMaxHeight()
+                                                    .drawBehind {
+                                                        drawLine(gridColor, Offset(size.width - 0.5f, 0f), Offset(size.width - 0.5f, size.height), 1f)
+                                                    }
                                                     .padding(LocalCellPadding.current)
                                             ) {
                                                 scope.renderCell(cell, item)

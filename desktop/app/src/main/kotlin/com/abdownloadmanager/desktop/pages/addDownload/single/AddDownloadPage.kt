@@ -56,8 +56,8 @@ fun AddDownloadPage(
     val onDuplicateStrategy by component.onDuplicateStrategy.collectAsState()
     Column(
         Modifier
-            .padding(horizontal = 32.dp)
-            .padding(top = 8.dp, bottom = 16.dp)
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 16.dp)
     ) {
         val credentials by component.credentials.collectAsState()
         fun setLink(link: String) {
@@ -81,18 +81,21 @@ fun AddDownloadPage(
                 }
             }
         }
-        UrlTextField(
-            text = credentials.link,
-            setText = {
-                setLink(it)
-            },
-            modifier = Modifier
-        )
+        IdmLabeledRow("URL") {
+            UrlTextField(
+                text = credentials.link,
+                setText = {
+                    setLink(it)
+                },
+                modifier = Modifier
+            )
+        }
         Row {
             val canAddResult by component.canAddResult.collectAsState()
             Column(Modifier.weight(1f)) {
                 val useCategory by component.useCategory.collectAsState()
                 Spacer(Modifier.size(8.dp))
+                IdmLabeledRow("Category") {
                 Row(
                     modifier = Modifier.height(IntrinsicSize.Max),
                     verticalAlignment = Alignment.CenterVertically,
@@ -132,9 +135,11 @@ fun AddDownloadPage(
                         },
                     )
                 }
+                }
                 val isFolderChanged by component.isFolderChangedResult.collectAsState()
                 val rememberFolderAsDefault by component.rememberFolderAsDefault.collectAsState()
                 Spacer(Modifier.size(8.dp))
+                IdmLabeledRow("Save to") {
                 LocationTextField(
                     modifier = Modifier.fillMaxWidth(),
                     text = component.folder.collectAsState().value,
@@ -156,8 +161,10 @@ fun AddDownloadPage(
                         categoryName = isFolderChanged.categoryOrNull()?.name,
                     ),
                 )
+                }
                 val name by component.name.collectAsState()
                 Spacer(Modifier.size(8.dp))
+                IdmLabeledRow("File name") {
                 NameTextField(
                     text = name,
                     setText = {
@@ -176,6 +183,7 @@ fun AddDownloadPage(
                         else -> null
                     }.takeIf { name.isNotEmpty() }
                 )
+                }
             }
             Spacer(Modifier.size(24.dp))
             Column(
@@ -203,6 +211,20 @@ fun AddDownloadPage(
                 configurables = component.configurables,
             )
         }
+    }
+}
+
+/** IDM "Download File Info" style: a fixed width label on the left of each field */
+@Composable
+private fun IdmLabeledRow(label: String, content: @Composable () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            modifier = Modifier.width(72.dp).padding(end = 10.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            maxLines = 1,
+        )
+        Box(Modifier.weight(1f)) { content() }
     }
 }
 
@@ -463,7 +485,8 @@ private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
         } else {
             val canAddToDownloads by component.canAddToDownloads.collectAsState()
             ActionButton(
-                text = myStringResource(Res.string.add),
+                // IDM button names
+                text = "Download Later",
                 modifier = Modifier,
                 enabled = canAddToDownloads,
                 onClick = {
@@ -476,7 +499,7 @@ private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
             )
             Spacer(Modifier.width(8.dp))
             PrimaryMainActionButton(
-                text = myStringResource(Res.string.download),
+                text = "Start Download",
                 modifier = Modifier,
                 enabled = canAddToDownloads,
                 onClick = {

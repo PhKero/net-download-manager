@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -578,10 +579,13 @@ private fun RenderInfo(
     horizontalPadding: Dp,
     singleDownloadComponent: DesktopSingleDownloadComponent,
 ) {
+    // IDM style: the details sit in a framed box
     Column(
         modifier
             .padding(horizontal = horizontalPadding)
-            .padding(top = 8.dp)
+            .padding(top = 8.dp, bottom = 4.dp)
+            .border(1.dp, myColors.onBackground / 0.15f, RoundedCornerShape(3.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
         for (propertyItem in singleDownloadComponent.extraDownloadProgressInfo.collectAsState().value) {
             Spacer(Modifier.height(2.dp))

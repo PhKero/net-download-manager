@@ -161,7 +161,7 @@ private fun ActionIconWithLabel(
                 WithContentAlpha(1f) {
                     icon?.let {
                         // large icon with the label under it, like the classic IDM toolbar
-                        val iconSize = 24.dp
+                        val iconSize = 30.dp
                         val tint = toolbarTintOf(it)
                         if (tint != null) {
                             MyIcon(
