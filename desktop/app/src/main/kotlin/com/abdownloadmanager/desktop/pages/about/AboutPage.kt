@@ -129,8 +129,6 @@ private fun RenderAppInfo(
                     myStringResource(Res.string.developed_with_love_for_you),
                 )
                 Spacer(Modifier.height(8.dp))
-                DonateButton()
-                Spacer(Modifier.height(8.dp))
                 Spacer(
                     Modifier
                         .fillMaxWidth()
@@ -206,23 +204,9 @@ private fun SocialAndLinks(
         )
         SocialSmallButton(
             MyIcons.speaker,
-            Res.string.channel.asStringSource(),
+            "Releases".asStringSource(),
             onClick = {
                 URLOpener.openUrl(SharedConstants.telegramChannelUrl)
-            }
-        )
-        SocialSmallButton(
-            MyIcons.group,
-            Res.string.group.asStringSource(),
-            onClick = {
-                URLOpener.openUrl(SharedConstants.telegramGroupUrl)
-            }
-        )
-        SocialSmallButton(
-            MyIcons.language,
-            Res.string.translators_contribute_title.asStringSource(),
-            onClick = {
-                URLOpener.openUrl(SharedConstants.projectTranslations)
             }
         )
     }

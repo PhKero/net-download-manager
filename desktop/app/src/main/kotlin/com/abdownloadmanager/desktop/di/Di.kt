@@ -89,7 +89,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import com.abdownloadmanager.updatechecker.NoUpdateChecker
+import com.abdownloadmanager.updatechecker.GithubUpdateChecker
 import com.abdownloadmanager.updatechecker.UpdateChecker
 import ir.amirab.util.AppVersionTracker
 import com.abdownloadmanager.shared.util.appinfo.PreviousVersion
@@ -487,8 +487,18 @@ val updaterModule = module {
         )
     }
     single<UpdateChecker> {
-        // custom build: never offer the upstream release, it would remove our features
-        NoUpdateChecker(AppVersion.get())
+        // Net Download Manager: updates come from our own GitHub releases (PhKero/net-download-manager),
+        // never from upstream AB Download Manager, so our features are kept
+        GithubUpdateChecker(
+            AppVersion.get(),
+            githubApi = GithubApi(
+                owner = SharedConstants.projectGithubOwner,
+                repo = SharedConstants.projectGithubRepo,
+                client = OkHttpClient
+                    .Builder()
+                    .build()
+            )
+        )
     }
     single {
         UpdateManager(

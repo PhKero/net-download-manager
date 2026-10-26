@@ -215,8 +215,6 @@ class HomeComponent(
             +supportActionGroup
             separator()
             +openOpenSourceThirdPartyLibraries
-            +openTranslators
-            +donate
             separator()
             +checkForUpdateAction
             +openAboutAction
