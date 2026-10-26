@@ -1,180 +1,78 @@
-<div align="center">
-  <a href="https://abdownloadmanager.com" target="_blank">
-    <img width="180" src="assets/logo/app_logo_with_background.svg" alt="AB Download Manager Logo">
-  </a>
-</div>
-<h1 align="center">AB Download Manager</h1>
-<p align="center">
-    <a href="https://github.com/amir1376/ab-download-manager/releases/latest"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/amir1376/ab-download-manager?color=greenlight&label=latest%20release"></a>
-    <a href="https://abdownloadmanager.com"><img alt="AB Download Manager Website" src="https://img.shields.io/badge/project-website-purple?&labelColor=gray"></a>
-    <a href="https://t.me/abdownloadmanager"><img alt="Telegram Channel" src="https://img.shields.io/badge/Telegram-Channel-blue?logo=telegram&labelColor=gray"></a>
-    <a href="https://t.me/abdownloadmanager_discussion"><img alt="Telegram Group" src="https://img.shields.io/badge/Telegram-Group-blue?logo=telegram&labelColor=gray"></a>
-    <a href="https://crowdin.com/project/ab-download-manager"><img alt="Crowdin" src="https://badges.crowdin.net/ab-download-manager/localized.svg"></a>
-</p>
+<p align="center"><img src="desktop/app/icons/icon.png" width="96" alt=""></p>
 
-<a href="https://abdownloadmanager.com" target="_blank">
-    <img alt="AB Download Manager Banner" src="assets/banners/app_banner.png"/>
-</a>
+<h1 align="center">Net Download Manager</h1>
 
-## Introduction
+<p align="center">A free, open-source download manager for Windows with an IDM-like feel:<br>
+fast multi-part downloads, a "Download this video" button on every site, playlists, torrents.</p>
 
-[AB Download Manager](https://abdownloadmanager.com) is a desktop app that helps you manage and organize your downloads more efficiently than ever before.
+<p align="center"><a href="#عربي">العربية</a></p>
+
+Net Download Manager is a modified version of [AB Download Manager](https://github.com/amir1376/ab-download-manager)
+(Apache-2.0). It is not affiliated with AB Download Manager or with Internet Download Manager (IDM).
 
 ## Features
 
-- ⚡️ Faster Download Speed
-- ⏰ Queues and Schedulers
-- 🌐 Browser Extensions
-- 💻 Multiplatform (Android / Windows / Linux / Mac)
-- 🌙 Multiple Themes (Dark/Light/Black and more) with modern UI
-- ❤️ Free and Open Source
+**Downloads**
+- multi-part accelerated downloads with pause / resume, queues, scheduler, shut down when done
+- speed limit, speed schedule by time of day (optional), download quota (optional)
+- torrents and magnet links (aria2)
+- categories, proxy, checksum, antivirus scan with Microsoft Defender, "Mark of the Web"
+- clipboard monitor, archive extraction after download (7-Zip, optional), floating speed window (optional)
 
-Please visit [Project Website](https://abdownloadmanager.com) for more info.
+**Video**
+- about 1800 sites through [yt-dlp](https://github.com/yt-dlp/yt-dlp): YouTube, Facebook, Instagram, TikTok, X, Vimeo, SoundCloud...
+- quality list with sizes (Best, 4K ... 144p, audio only), video and audio merged into mp4
+- whole playlists and channels, with a list to untick what you don't want
+- subtitles embedded or as `.srt` files
+- yt-dlp updates itself once a day
 
-## Installation
+**Browser extension (Firefox, Chrome, Edge, Brave)**
+- "Download this video" bar on any video, also inside embedded players
+- quality menu with real sizes, read from the app
+- Playlist button, "Download this audio" on music sites
+- "Download all links" with file type groups, optionally reading linked pages of the same site
 
-<a href="https://github.com/amir1376/ab-download-manager/releases/latest"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/amir1376/ab-download-manager?color=greenlight&label=latest%20release"></a>
+**Look**
+- toolbar with large colored icons, Classic Blue theme that follows Windows light / dark mode
+- Arabic and 25+ other languages
 
-### Download and Install the App
+## Install
 
-<a href="https://abdownloadmanager.com"><img src="https://img.shields.io/badge/Official%20Website-897BFF?logo=abdownloadmanager&logoColor=fff&style=flat-square" alt="Official Website" height="32" /></a>
-<a href="https://github.com/amir1376/ab-download-manager/releases/latest"><img src="https://img.shields.io/badge/GitHub%20Releases-2a2f36?logo=github&logoColor=fff&style=flat-square" alt="GitHub Releases" height="32" /></a>
+Download `NetDownloadManager_*_windows_x64.exe` from [Releases](../../releases) and run it.
+Then install the browser extension from the same release (`NetDownloadManager-Firefox.zip` /
+`NetDownloadManager-Chrome.zip`, load it from `about:debugging` in Firefox or `chrome://extensions`
+with Developer mode).
 
-#### Installation script (Linux)
+## Build
 
-The recommended way to install the app on Linux
+Needs Windows, JetBrains Runtime 25, Node.js and NSIS. From the project root folder:
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/amir1376/ab-download-manager/master/scripts/install.sh)
+```powershell
+.\update.ps1 -NoUpdate   # build only
+.\update.ps1             # merge the latest AB Download Manager first, then build
 ```
 
-#### Winget or Scoop (for Windows)
+## Licenses
 
-**winget**:
+Apache-2.0, like AB Download Manager. Bundled programs (yt-dlp, FFmpeg, aria2) keep their own
+licenses, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-```bash
-winget install amir1376.ABDownloadManager
-```
+---
 
-**scoop**:
+<h2 id="عربي" dir="rtl">عربي</h2>
 
-```bash
-scoop install extras/abdownloadmanager
-```
+<div dir="rtl">
 
-#### Homebrew (for macOS & Linux)
+**Net Download Manager** برنامج تحميل مجاني ومفتوح المصدر للويندوز، شبه IDM في الإحساس والشكل،
+ومبني على [AB Download Manager](https://github.com/amir1376/ab-download-manager).
 
-```bash
-brew tap amir1376/tap && brew install --cask ab-download-manager
-```
+- تحميل سريع بأجزاء، إيقاف وتكملة، طابور وجدولة، وقفل الجهاز بعد التحميل
+- زرار **"Download this video"** على أي فيديو في أي موقع، وقايمة الجودات بأحجامها
+- تحميل البلاي ليستات والقنوات كاملة، والترجمة
+- تورنت و Magnet
+- فحص الأنتي فيروس، مراقبة الـ Clipboard، فك الضغط، وشباك عايم بالسرعة
+- ثيم أزرق فاتح وغامق بيمشي مع الويندوز، والواجهة بالعربي
 
-> ⚠️ **Warning:** This software is NOT on Google Play or other app stores unless listed here. Any version **claiming to be or related to this project** should be considered SCAM and UNSAFE.
+**التسطيب:** حمّل ملف الـ Setup من صفحة [Releases](../../releases) وشغّله، وبعدها سطّب إضافة المتصفح من نفس الصفحة.
 
-For alternative installation methods, uninstallation instructions, and more details, please refer to the [wiki](https://github.com/amir1376/ab-download-manager/wiki/) page.
-
-### Browser Extensions
-
-<a href="https://addons.mozilla.org/en-US/firefox/addon/ab-download-manager/"><img src="https://img.shields.io/amo/v/ab-download-manager?label=Firefox&logo=firefoxbrowser" alt="Firefox Add-ons Version"></a>
-<a href="https://chromewebstore.google.com/detail/bbobopahenonfdgjgaleledndnnfhooj"> <img src="https://img.shields.io/chrome-web-store/v/bbobopahenonfdgjgaleledndnnfhooj?label=Chrome&logo=googlechrome" alt="Chrome Web Store Version"></a>
-
-You can download the browser extension to integrate the app with your browser.
-
-<p align="left">
-<a href="https://addons.mozilla.org/firefox/addon/ab-download-manager/">
-    <picture>
-        <img alt="Chrome Extension" src="./assets/banners/firefox-extension.png" height="48">
-    </picture>
-</a>
-<a href="https://chromewebstore.google.com/detail/bbobopahenonfdgjgaleledndnnfhooj">
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./assets/banners/chrome-extension_dark.png" height="48">
-        <source media="(prefers-color-scheme: light)" srcset="./assets/banners/chrome-extension_light.png" height="48">
-        <img alt="Chrome Extension" src="./assets/banners/chrome-extension_light.png" height="48">
-    </picture>
-</a>
-</p>
-
-## Screenshots
-
-<div align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/app-home_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/screenshots/app-home_light.png">
-  <img alt="App Home Section" src="./assets/screenshots/app-home_dark.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/app-download_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/screenshots/app-download_light.png">
-  <img alt="App Download Section" src="./assets/screenshots/app-download_dark.png">
-</picture>
 </div>
-
-## Community
-
-- 📢 [Telegram Channel](https://t.me/abdownloadmanager) – News, announcements, and release updates.
-- 💬 [Telegram Group](https://t.me/abdownloadmanager_discussion) – Get help, report bugs, suggest features, and discuss
-  the project with the community.
-
-## Repositories And Source Code
-
-There are multiple repositories related to the **AB Download Manager** project:
-
-| Repository                                                                                 | Description                                                                   |
-|--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [Main Application](https://github.com/amir1376/ab-download-manager) (You are here)         | Contains the  **Application** that runs on your  **device**                   |
-| [Browser Integration](https://github.com/amir1376/ab-download-manager-browser-integration) | Contains the **Browser Extension** to be installed on your  **browser**       |
-| [Website](https://github.com/amir1376/ab-download-manager-website)                         | Contains the **AB Download Manager** [website](https://abdownloadmanager.com) |
-
-I've spent a lot of time to create this project.
-
-If you like my work, please consider giving it a ⭐ — thanks! ❤️
-
-## Bug Report
-
-If you notice any bugs in the source code, please report them via the `GitHub Issues` section.
-
-## Build From Source
-
-To compile and test the desktop app on your local machine,
-follow these steps:
-
-1. Clone the project.
-2. Download and extract the [JBR](https://github.com/JetBrains/JetBrainsRuntime/releases), and make it available by either:
-    
-    - Adding it to your `PATH`, or
-    - Setting the `JAVA_HOME` environment variable to its installation path.
-  
-3. Navigate to the project directory, open your terminal and execute the following command:
-
-    ```bash
-    ./gradlew createReleaseFolderForCi
-    ```
-
-4. The output will be available at:
-
-    ```
-    <project_dir>/build/ci-release
-    ```
-
-> **Note**. This project is compiled and published by GitHub actions [here](./.github/workflows/publish.yml), so if you
-> faced any problem you can check that too.
-
-## Translations
-
-<a href="https://crowdin.com/project/ab-download-manager"><img alt="Crowdin" src="https://badges.crowdin.net/ab-download-manager/localized.svg"></a>
-
-If you’d like to help translate AB Download Manager into another language, or improve existing translations, you can do
-so on Crowdin. Here’s how:
-
-- Visit the project in [Crowdin](https://crowdin.com/project/ab-download-manager)
-- Please DO NOT submit translations via pull requests.
-- If you want to add a new language, please see [this](https://github.com/amir1376/ab-download-manager/issues/144).
-
-## Contribution
-
-If you want to contribute to this project, please read [Contributing Guide](CONTRIBUTING.md) first.
-
-## Support the Project
-
-If you'd like to support the project, you can find details on how to donate in the [DONATE.md](DONATE.md) file.

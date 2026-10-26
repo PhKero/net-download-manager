@@ -46,7 +46,11 @@ abstract class NsisTask : DefaultTask() {
 
     init {
         nsisExecutable.convention(
-            project.provider { File("C:\\Program Files (x86)\\NSIS\\makensis.exe") }
+            project.provider {
+                // NSIS_HOME lets a portable NSIS be used instead of an installed one
+                System.getenv("NSIS_HOME")?.let { File(it, "makensis.exe") }?.takeIf { it.isFile }
+                    ?: File("C:\\Program Files (x86)\\NSIS\\makensis.exe")
+            }
         )
     }
 
