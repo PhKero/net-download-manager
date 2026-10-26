@@ -216,6 +216,65 @@ Section "Desktop Shortcut"
     !insertmacro CreateDesktopShortcut
 SectionEnd
 
+; Net Download Manager: offer the browser add-on for every browser found on this PC.
+; Each ticked browser opens on the add-on page after the install, the user confirms there.
+!define FIREFOX_ADDON_URL "https://addons.mozilla.org/firefox/addon/net-download-manager/"
+!define CHROME_ADDON_URL "https://github.com/PhKero/net-download-manager/releases/latest"
+!define EDGE_ADDON_URL "https://github.com/PhKero/net-download-manager/releases/latest"
+
+!macro findBrowser exeName outVar
+    ReadRegStr ${outVar} HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\${exeName}" ""
+    ${If} ${outVar} == ""
+        ReadRegStr ${outVar} HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\${exeName}" ""
+    ${EndIf}
+!macroend
+
+SectionGroup "Browser extensions" SecBrowsers
+Section "Firefox add-on" SecFirefox
+    ; silent installs are in-app updates: never open browsers then
+    ${IfNot} ${Silent}
+        !insertmacro findBrowser "firefox.exe" $1
+        ${If} $1 != ""
+            Exec '"$1" "${FIREFOX_ADDON_URL}"'
+        ${EndIf}
+    ${EndIf}
+SectionEnd
+Section "Chrome extension" SecChrome
+    ; silent installs are in-app updates: never open browsers then
+    ${IfNot} ${Silent}
+        !insertmacro findBrowser "chrome.exe" $1
+        ${If} $1 != ""
+            Exec '"$1" "${CHROME_ADDON_URL}"'
+        ${EndIf}
+    ${EndIf}
+SectionEnd
+Section "Edge extension" SecEdge
+    ; silent installs are in-app updates: never open browsers then
+    ${IfNot} ${Silent}
+        !insertmacro findBrowser "msedge.exe" $1
+        ${If} $1 != ""
+            Exec '"$1" "${EDGE_ADDON_URL}"'
+        ${EndIf}
+    ${EndIf}
+SectionEnd
+SectionGroupEnd
+
+; untick the browsers that are not installed
+Function .onGUIInit
+    !insertmacro findBrowser "firefox.exe" $1
+    ${If} $1 == ""
+        SectionSetFlags ${SecFirefox} 0
+    ${EndIf}
+    !insertmacro findBrowser "chrome.exe" $1
+    ${If} $1 == ""
+        SectionSetFlags ${SecChrome} 0
+    ${EndIf}
+    !insertmacro findBrowser "msedge.exe" $1
+    ${If} $1 == ""
+        SectionSetFlags ${SecEdge} 0
+    ${EndIf}
+FunctionEnd
+
 Section /o "un.Remove User Data"
     !insertmacro RemoveUserData
 SectionEnd

@@ -149,7 +149,7 @@ buildConfig {
     buildConfigField(
         "INTEGRATION_FIREFOX_LINK",
         provider {
-            "https://github.com/PhKero/net-download-manager/releases/latest"
+            "https://addons.mozilla.org/firefox/addon/net-download-manager/"
         }
     )
     buildConfigField(

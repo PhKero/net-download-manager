@@ -169,7 +169,8 @@ private fun ProgressWindow(
     }
     val uiScale = LocalUiScale.current
     val defaultHeight = 290f.applyUiScale(uiScale)
-    val defaultWidth = 450f.applyUiScale(uiScale)
+    // IDM's download window is wider; it can also be resized
+    val defaultWidth = 540f.applyUiScale(uiScale)
 
     val showPartInfo by singleDownloadComponent.showPartInfo.collectAsState()
     val singleDownloadPageSizing = remember(showPartInfo) { SingleProgressDownloadPageSizing() }
@@ -191,7 +192,7 @@ private fun ProgressWindow(
     CustomWindow(
         state = state,
         onRequestToggleMaximize = null,
-        resizable = false,
+        resizable = true,
         onCloseRequest = onRequestClose,
         minSize = DpSize(defaultWidth.dp, defaultHeight.dp),
         windowController = rememberWindowController(
@@ -203,10 +204,28 @@ private fun ProgressWindow(
             state = state,
             itemState = itemState,
         )
+        // IDM style: the window's taskbar button fills with the download progress
+        val percent = itemState.percent
+        val isPaused = itemState.status is ir.amirab.downloader.downloaditem.DownloadJobStatus.CanBeResumed
+        LaunchedEffect(percent, isPaused) {
+            runCatching {
+                if (java.awt.Taskbar.isTaskbarSupported()) {
+                    val taskbar = java.awt.Taskbar.getTaskbar()
+                    if (taskbar.isSupported(java.awt.Taskbar.Feature.PROGRESS_STATE_WINDOW)) {
+                        taskbar.setWindowProgressState(
+                            window,
+                            if (isPaused) java.awt.Taskbar.State.PAUSED else java.awt.Taskbar.State.NORMAL,
+                        )
+                        taskbar.setWindowProgressValue(window, (percent ?: 0).coerceIn(0, 100))
+                    }
+                }
+            }
+        }
         LaunchedEffect(w, h) {
             state.requestSize(
                 DpSize(
-                    width = w.dp,
+                    // keep a width the user dragged to, only the height follows "Show details"
+                    width = maxOf(state.size.width, w.dp),
                     height = h.dp
                 )
             )

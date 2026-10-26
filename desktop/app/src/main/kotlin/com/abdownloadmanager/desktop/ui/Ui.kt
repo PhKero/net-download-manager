@@ -221,9 +221,21 @@ private fun SystemTray(
                 +requestExitAction
             }
         }
+        // IDM style: hovering the tray icon lists what is downloading right now
+        val active by component.downloadSystem.downloadMonitor.activeDownloadListFlow.collectAsState()
+        val tooltip = if (active.isEmpty()) {
+            AppInfo.displayName
+        } else {
+            buildString {
+                append(AppInfo.displayName).append(" - ").append(active.size).append(" downloading")
+                active.take(5).forEach { item ->
+                    append('\n').append(item.percent?.let { "$it%  " } ?: "").append(item.name.take(40))
+                }
+            }
+        }
         Tray(
             icon = MyIcons.appIcon,
-            tooltip = AppInfo.displayName,
+            tooltip = tooltip,
             primaryAction = { showDownloadList.onClick() },
             menu = menu,
         )
