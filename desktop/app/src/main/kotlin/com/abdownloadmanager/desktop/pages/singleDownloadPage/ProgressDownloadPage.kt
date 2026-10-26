@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -55,16 +56,17 @@ enum class SingleDownloadPageSections(
     val title: StringSource,
     val icon: IconSource,
 ) {
+    // IDM style tab names
     Info(
-        Res.string.info.asStringSource(),
+        "Download status".asStringSource(),
         MyIcons.info
     ),
     Settings(
-        Res.string.speed.asStringSource(),
+        "Speed Limiter".asStringSource(),
         MyIcons.fast,
     ),
     OnCompletion(
-        Res.string.on_completion.asStringSource(),
+        "Options on completion".asStringSource(),
         MyIcons.flag
     ),
 }
@@ -254,14 +256,15 @@ private fun RenderProgressBar(itemState: IDownloadItemState) {
         is DownloadJobStatus.PreparingFile -> myColors.infoGradient
         DownloadJobStatus.Resuming,
         DownloadJobStatus.Downloading,
-            -> myColors.primaryGradient
+            // IDM shows a green bar while receiving data
+            -> myColors.successGradient
     }
 
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(myShapes.defaultRounded)
-            .height(14.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .height(22.dp)
             .background(myColors.onBackground / 15)
     ) {
         progress?.let { progress ->
@@ -344,11 +347,19 @@ private fun RenderPartInfo(
         Column(
             Modifier.weight(1f)
         ) {
+            WithContentAlpha(0.75f) {
+                Text(
+                    "Start positions and download progress by connections",
+                    Modifier.padding(horizontal = horizontalPadding).padding(bottom = 4.dp),
+                    fontSize = myTextSizes.sm,
+                    maxLines = 1,
+                )
+            }
             RenderParts(
                 itemState.parts,
                 Modifier
                     .padding(horizontal = horizontalPadding)
-                    .height(4.dp)
+                    .height(10.dp)
                     .clip(myShapes.defaultRounded)
                     .background(myColors.onBackground / 15)
             )
@@ -620,20 +631,11 @@ private fun PartInfoButton(
     showing: Boolean,
     onClick: (Boolean) -> Unit,
 ) {
-    val partsInfoTitle = Res.string.parts_info.asStringSource()
-    Tooltip(partsInfoTitle) {
-        IconActionButton(
-            onClick = {
-                onClick(!showing)
-            },
-            contentDescription = partsInfoTitle,
-            icon = if (showing) {
-                MyIcons.up
-            } else {
-                MyIcons.down
-            }
-        )
-    }
+    // IDM style: shows the connections table under the progress bar
+    SingleDownloadPageButton(
+        onClick = { onClick(!showing) },
+        text = if (showing) "<< Hide details" else "Show details >>",
+    )
 }
 
 @Composable
