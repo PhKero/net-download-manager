@@ -100,35 +100,19 @@ fun AddDownloadPage(
                     modifier = Modifier.height(IntrinsicSize.Max),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .onClick {
-                                component.setUseCategory(!useCategory)
-                            }
-                            .padding(vertical = 4.dp)
-                    ) {
-                        CheckBox(
-                            size = 16.dp,
-                            value = useCategory,
-                            onValueChange = { component.setUseCategory(it) }
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(myStringResource(Res.string.use_category))
-                    }
-                    Spacer(Modifier.width(8.dp))
                     CategorySelect(
                         modifier = Modifier.weight(1f),
-                        enabled = useCategory,
+                        enabled = true,
                         categories = component.categories.collectAsState().value,
                         selectedCategory = component.selectedCategory.collectAsState().value,
                         onCategorySelected = {
+                            component.setUseCategory(true)
                             component.setSelectedCategory(it)
                         },
                     )
                     Spacer(Modifier.width(8.dp))
                     CategoryAddButton(
-                        enabled = useCategory,
+                        enabled = true,
                         modifier = Modifier.fillMaxHeight(),
                         onClick = {
                             component.addNewCategory()
@@ -139,7 +123,7 @@ fun AddDownloadPage(
                 val isFolderChanged by component.isFolderChangedResult.collectAsState()
                 val rememberFolderAsDefault by component.rememberFolderAsDefault.collectAsState()
                 Spacer(Modifier.size(8.dp))
-                IdmLabeledRow("Save to") {
+                IdmLabeledRow("Save As") {
                 LocationTextField(
                     modifier = Modifier.fillMaxWidth(),
                     text = component.folder.collectAsState().value,
@@ -161,6 +145,30 @@ fun AddDownloadPage(
                         categoryName = isFolderChanged.categoryOrNull()?.name,
                     ),
                 )
+                }
+                // IDM: Remember this path for "<category>" category
+                val categoryName = isFolderChanged.categoryOrNull()?.name
+                Spacer(Modifier.size(6.dp))
+                IdmLabeledRow("") {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.onClick {
+                            if (isFolderChanged.isChanged) component.setRememberFolderAsDefault(!rememberFolderAsDefault)
+                        },
+                    ) {
+                        CheckBox(
+                            size = 16.dp,
+                            value = rememberFolderAsDefault,
+                            enabled = isFolderChanged.isChanged,
+                            onValueChange = { component.setRememberFolderAsDefault(it) },
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            if (categoryName != null) "Remember this path for \"$categoryName\" category"
+                            else "Remember this path",
+                            fontSize = myTextSizes.sm,
+                        )
+                    }
                 }
                 val name by component.name.collectAsState()
                 Spacer(Modifier.size(8.dp))
@@ -464,7 +472,7 @@ fun ConfigActionsButtons(component: BaseAddSingleDownloadComponent) {
 
 @Composable
 private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
-    Row {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
         val onDuplicateStrategy by component.onDuplicateStrategy.collectAsState()
         val canAddResult by component.canAddResult.collectAsState()
         if (canAddResult is CanAddResult.DownloadAlreadyExists && onDuplicateStrategy == null) {
@@ -516,8 +524,8 @@ private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
             }
 
         }
-        //        Spacer(Modifier.weight(1f))
-        Spacer(Modifier.weight(1f))
+        // IDM keeps the three buttons together in the middle
+        Spacer(Modifier.width(8.dp))
 
         ActionButton(
             text = myStringResource(Res.string.cancel),

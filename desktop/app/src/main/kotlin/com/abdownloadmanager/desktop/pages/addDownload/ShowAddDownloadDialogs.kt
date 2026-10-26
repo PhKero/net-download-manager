@@ -76,7 +76,7 @@ private fun AddDownloadWindow(
                 alwaysOnTop = true,
                 minSize = DpSize(w.dp, h.dp),
                 windowController = rememberWindowController(
-                    title = myStringResource(Res.string.add_download),
+                    title = "Download File Info",
                 ),
             ) {
                 LaunchedEffect(Unit) {
