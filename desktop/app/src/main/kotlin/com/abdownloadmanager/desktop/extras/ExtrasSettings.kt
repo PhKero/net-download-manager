@@ -17,7 +17,10 @@ import kotlin.time.Duration.Companion.milliseconds
 @Serializable
 private data class ExtrasSettingsModel(
     val antivirusScan: Boolean = true,
-    val clipboardMonitor: Boolean = true,
+    // off by default: copying any link must not ask to download; the browser video bar is enough.
+    // New key, so the old "on" saved by earlier versions is not used any more (it can be turned on in Settings).
+    @kotlinx.serialization.SerialName("clipboardMonitorOptIn")
+    val clipboardMonitor: Boolean = false,
     val ytDlpAutoUpdate: Boolean = true,
     val ytDlpLastUpdateCheck: Long = 0,
     val downloadSubtitles: Boolean = false,

@@ -101,19 +101,39 @@ class YtDlpDownloaderInUi(
         val downloaded = job.getDownloadedSize()
         val total = item.contentLength
         val status = job.status.value
-        // a single bar: yt-dlp manages its own connections
-        val part = UiRangedPart(
-            id = 0,
-            status = when (status) {
-                is DownloadJobStatus.Finished -> PartDownloadStatus.Completed
-                is DownloadJobStatus.IsActive -> PartDownloadStatus.ReceivingData
-                else -> PartDownloadStatus.IDLE
-            },
-            howMuchProceed = downloaded,
-            percent = if (total > 0) ((downloaded * 100) / total).toInt().coerceIn(0, 100) else null,
-            length = total.takeIf { it > 0 },
-            partSpace = 1f,
-        )
+        val activeStatus = when (status) {
+            is DownloadJobStatus.Finished -> PartDownloadStatus.Completed
+            is DownloadJobStatus.IsActive -> PartDownloadStatus.ReceivingData
+            else -> PartDownloadStatus.IDLE
+        }
+        // yt-dlp downloads each stream of the video (video, audio) over several connections (-N),
+        // but only reports progress per stream, so the window shows one real row per stream
+        val streams = job.getStreams()
+        val streamsTotal = streams.sumOf { it.total ?: it.done }.coerceAtLeast(1)
+        val parts = if (streams.isEmpty()) {
+            listOf(
+                UiRangedPart(
+                    id = 0,
+                    status = activeStatus,
+                    howMuchProceed = downloaded,
+                    percent = if (total > 0) ((downloaded * 100) / total).toInt().coerceIn(0, 100) else null,
+                    length = total.takeIf { it > 0 },
+                    partSpace = 1f,
+                )
+            )
+        } else {
+            streams.mapIndexed { index, stream ->
+                val length = stream.total
+                UiRangedPart(
+                    id = index.toLong(),
+                    status = if (stream.finished) PartDownloadStatus.Completed else activeStatus,
+                    howMuchProceed = stream.done,
+                    percent = length?.takeIf { it > 0 }?.let { ((stream.done * 100) / it).toInt().coerceIn(0, 100) },
+                    length = length,
+                    partSpace = (length ?: stream.done).toFloat() / streamsTotal,
+                )
+            }
+        }
         return RangeBasedProcessingDownloadItemState(
             id = job.id,
             folder = item.folder,
@@ -126,7 +146,7 @@ class YtDlpDownloaderInUi(
             completeTime = item.completeTime ?: 0,
             status = status,
             speed = props.speed,
-            parts = listOf(part),
+            parts = parts,
             supportResume = true,
             isWaiting = props.isWaiting,
         )

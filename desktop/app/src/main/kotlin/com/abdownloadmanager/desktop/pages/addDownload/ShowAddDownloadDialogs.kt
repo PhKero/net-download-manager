@@ -1,6 +1,8 @@
 package com.abdownloadmanager.desktop.pages.addDownload
 
 import ir.amirab.util.compose.trs
+import com.abdownloadmanager.desktop.utils.RememberWindowSize
+import com.abdownloadmanager.desktop.utils.WindowSizeMemory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,10 +56,13 @@ private fun AddDownloadWindow(
     val uiScale = LocalUiScale.current
     when (addDownloadComponent) {
         is BaseAddSingleDownloadComponent -> {
-            val h = 265.applyUiScale(uiScale)
-            val w = 500.applyUiScale(uiScale)
+            // tall enough that the buttons are never cut off, with room between the rows
+            val h = 330.applyUiScale(uiScale)
+            val w = 560.applyUiScale(uiScale)
+            val minSize = DpSize(width = 520.applyUiScale(uiScale).dp, height = 310.applyUiScale(uiScale).dp)
             val size = remember {
-                DpSize(
+                // IDM: opens at the size it had last time
+                WindowSizeMemory.getAtLeast("addDownload", minSize) ?: DpSize(
                     height = h.dp,
                     width = w.dp,
                 )
@@ -75,7 +80,7 @@ private fun AddDownloadWindow(
                 state = state,
                 onCloseRequest = onRequestClose,
                 alwaysOnTop = true,
-                minSize = DpSize(w.dp, h.dp),
+                minSize = minSize,
                 windowController = rememberWindowController(
                     title = trs("Download File Info", "معلومات ملف التحميل"),
                 ),
@@ -83,6 +88,7 @@ private fun AddDownloadWindow(
                 LaunchedEffect(Unit) {
                     PlatformAppActivator.active()
                 }
+                RememberWindowSize("addDownload", state)
 //                    BringToFront()
                 WindowIcon(MyIcons.appIcon)
                 AddDownloadPage(addDownloadComponent)

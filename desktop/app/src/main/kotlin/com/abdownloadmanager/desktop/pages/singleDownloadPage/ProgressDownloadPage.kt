@@ -505,26 +505,26 @@ sealed class PartInfoCells : TableCell<IndexedValue<UiPart>> {
     data object Number : PartInfoCells() {
         override val id: String = "#"
         override val name: StringSource = "N.".asStringSource()
-        override val size: CellSize = CellSize.Fixed(32.dp)
+        override val size: CellSize = CellSize.Fixed(40.dp)
     }
 
     data object Status : PartInfoCells() {
         override val id: String = "Status"
         // IDM calls this column "Info"
         override val name: StringSource = tr("Info", "معلومات")
-        override val size: CellSize = CellSize.Resizeable(100.dp..200.dp)
+        override val size: CellSize = CellSize.Resizeable(100.dp..320.dp, defaultWidth = 160.dp)
     }
 
     data object Downloaded : PartInfoCells() {
         override val id: String = "Downloaded"
         override val name: StringSource = Res.string.parts_info_downloaded_size.asStringSource()
-        override val size: CellSize = CellSize.Resizeable(90.dp..200.dp)
+        override val size: CellSize = CellSize.Resizeable(90.dp..320.dp, defaultWidth = 140.dp)
     }
 
     data object Total : PartInfoCells() {
         override val id: String = "Total"
         override val name: StringSource = Res.string.parts_info_total_size.asStringSource()
-        override val size: CellSize = CellSize.Resizeable(90.dp..200.dp)
+        override val size: CellSize = CellSize.Resizeable(90.dp..320.dp, defaultWidth = 140.dp)
     }
 
     companion object {

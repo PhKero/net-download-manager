@@ -27,6 +27,8 @@ import ir.amirab.util.desktop.screen.applyUiScale
 import java.awt.Dimension
 import java.awt.Taskbar
 import java.awt.Window
+import com.abdownloadmanager.desktop.utils.RememberWindowSize
+import com.abdownloadmanager.desktop.utils.WindowSizeMemory
 
 @Composable
 private fun getDownloadTitle(itemState: IDownloadItemState): String {
@@ -180,6 +182,13 @@ private fun ProgressWindow(
         h += singleDownloadPageSizing.partInfoHeight.value
             .applyUiScale(uiScale)
     }
+    // IDM: the next download window opens at the size the user last gave it
+    // (remembered apart for "Show details" open and closed, as the height differs)
+    val sizeKey = if (showPartInfo) "downloadWindow.details" else "downloadWindow"
+    WindowSizeMemory.getAtLeast(sizeKey, DpSize(w.dp, h.dp))?.let {
+        w = it.width.value
+        h = it.height.value
+    }
     val state = rememberWindowState(
         initialBoundsProvider = WindowBoundsProvider(
             sizeProvider = WindowSizeProvider.Fixed(
@@ -204,6 +213,7 @@ private fun ProgressWindow(
             state = state,
             itemState = itemState,
         )
+        RememberWindowSize(sizeKey, state)
         // IDM style: the window's taskbar button fills with the download progress
         val percent = itemState.percent
         val isPaused = itemState.status is ir.amirab.downloader.downloaditem.DownloadJobStatus.CanBeResumed

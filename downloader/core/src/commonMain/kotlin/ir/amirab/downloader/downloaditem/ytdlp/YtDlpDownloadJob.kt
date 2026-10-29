@@ -91,6 +91,7 @@ class YtDlpDownloadJob(
         onDownloadResumed()
         startAutoSaver()
         val progress = ProgressTracker(downloadedBytes.get())
+        currentTracker = progress
         val tail = ArrayDeque<String>()
         p.inputStream.bufferedReader(Charsets.UTF_8).useLines { lines ->
             for (line in lines) {
@@ -280,11 +281,17 @@ class YtDlpDownloadJob(
         private var currentDone = 0L
         private var currentTotal: Long? = null
         private val resumedFrom = initial
+        // every stream yt-dlp downloads (video, audio), in order, with its own progress
+        val streams = java.util.concurrent.ConcurrentHashMap<String, StreamProgress>()
+        private val order = java.util.concurrent.CopyOnWriteArrayList<String>()
 
         fun update(formatId: String, done: Long, total: Long?): Long {
             if (currentFormat != null && formatId != currentFormat) {
                 finishedStreams += currentTotal ?: currentDone
+                currentFormat?.let { old -> streams[old]?.let { streams[old] = it.copy(done = it.total ?: it.done, finished = true) } }
             }
+            if (formatId !in order) order.add(formatId)
+            streams[formatId] = StreamProgress(done = done, total = total, finished = false)
             currentFormat = formatId
             currentDone = done
             currentTotal = total
@@ -294,7 +301,17 @@ class YtDlpDownloadJob(
         }
 
         fun totalEstimate(): Long? = currentTotal?.let { finishedStreams + it }
+
+        fun orderedStreams(): List<StreamProgress> = order.mapNotNull { streams[it] }
     }
+
+    data class StreamProgress(val done: Long, val total: Long?, val finished: Boolean)
+
+    @Volatile
+    private var currentTracker: ProgressTracker? = null
+
+    /** the streams of this video (usually video + audio) with their real progress, for the download window */
+    fun getStreams(): List<StreamProgress> = currentTracker?.orderedStreams().orEmpty()
 
     companion object {
         private const val PROGRESS_PREFIX = "ABDM|"

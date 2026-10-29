@@ -95,7 +95,7 @@ fun AddDownloadPage(
             val canAddResult by component.canAddResult.collectAsState()
             Column(Modifier.weight(1f)) {
                 val useCategory by component.useCategory.collectAsState()
-                Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(12.dp))
                 IdmLabeledRow(trs("Category", "الفئة")) {
                 Row(
                     modifier = Modifier.height(IntrinsicSize.Max),
@@ -123,7 +123,7 @@ fun AddDownloadPage(
                 }
                 val isFolderChanged by component.isFolderChangedResult.collectAsState()
                 val rememberFolderAsDefault by component.rememberFolderAsDefault.collectAsState()
-                Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(12.dp))
                 IdmLabeledRow(trs("Save As", "حفظ باسم")) {
                 LocationTextField(
                     modifier = Modifier.fillMaxWidth(),
@@ -149,7 +149,7 @@ fun AddDownloadPage(
                 }
                 // IDM: Remember this path for "<category>" category
                 val categoryName = isFolderChanged.categoryOrNull()?.name
-                Spacer(Modifier.size(6.dp))
+                Spacer(Modifier.size(8.dp))
                 IdmLabeledRow("") {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -163,7 +163,7 @@ fun AddDownloadPage(
                             enabled = isFolderChanged.isChanged,
                             onValueChange = { component.setRememberFolderAsDefault(it) },
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             if (categoryName != null) trs("Remember this path for \"$categoryName\" category", "تذكّر هذا المسار لفئة \"$categoryName\"")
                             else trs("Remember this path", "تذكّر هذا المسار"),
@@ -172,7 +172,7 @@ fun AddDownloadPage(
                     }
                 }
                 val name by component.name.collectAsState()
-                Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(12.dp))
                 IdmLabeledRow(trs("File name", "اسم الملف")) {
                 NameTextField(
                     text = name,
@@ -194,7 +194,7 @@ fun AddDownloadPage(
                 )
                 }
             }
-            Spacer(Modifier.size(24.dp))
+            Spacer(Modifier.size(20.dp))
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -202,10 +202,13 @@ fun AddDownloadPage(
                     .width(IntrinsicSize.Max)
             ) {
                 RenderFileTypeAndSize(component)
+                Spacer(Modifier.size(10.dp))
                 RenderResumeSupport(component)
+                Spacer(Modifier.size(10.dp))
                 ConfigActionsButtons(component)
             }
         }
+        Spacer(Modifier.height(20.dp))
         Spacer(Modifier.weight(1f))
         MainActionButtons(component)
         if (component.showSolutionsOnDuplicateDownloadUi) {
@@ -229,7 +232,7 @@ private fun IdmLabeledRow(label: String, content: @Composable () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             label,
-            modifier = Modifier.width(72.dp).padding(end = 10.dp),
+            modifier = Modifier.width(88.dp).padding(start = 4.dp, end = 12.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
             maxLines = 1,
         )
@@ -451,7 +454,7 @@ fun ConfigActionsButtons(component: BaseAddSingleDownloadComponent) {
         IconActionButton(MyIcons.refresh, Res.string.refresh.asStringSource()) {
             component.refresh()
         }
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(8.dp))
         IconActionButton(
             MyIcons.settings,
             Res.string.settings.asStringSource(),
@@ -506,7 +509,7 @@ private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
                 }
 
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(12.dp))
             PrimaryMainActionButton(
                 text = trs("Start Download", "بدء التحميل"),
                 modifier = Modifier,
@@ -526,7 +529,7 @@ private fun MainActionButtons(component: BaseAddSingleDownloadComponent) {
 
         }
         // IDM keeps the three buttons together in the middle
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(12.dp))
 
         ActionButton(
             text = myStringResource(Res.string.cancel),
