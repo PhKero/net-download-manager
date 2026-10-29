@@ -257,6 +257,15 @@ private fun SystemTray(
             primaryAction = { showDownloadList.onClick() },
             menu = menu,
         )
+        // IDM style: one more tray icon, for all running downloads together
+        val downloadsTray = remember {
+            DownloadsTrayIcon(
+                onOpenDownload = { id -> component.openDownloadDialog(id) },
+                onOpenList = { showDownloadList.onClick() },
+            )
+        }
+        LaunchedEffect(active) { downloadsTray.update(active) }
+        DisposableEffect(Unit) { onDispose { downloadsTray.dispose() } }
     } else {
         LaunchedEffect(Unit) { PlatformDockToggler.show() }
     }
