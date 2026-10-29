@@ -3,6 +3,8 @@ RequestExecutionLevel user
 SetCompressor /SOLID lzma
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
+!include "nsDialogs.nsh"
+!include "Sections.nsh"
 
 
 !define APP_PUBLISHER "{{ app_publisher }}"
@@ -72,6 +74,8 @@ InstallDir "$LOCALAPPDATA\${APP_NAME}"
 !define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
 !define MUI_LANGDLL_WINDOWTITLE "${APP_DISPLAY_NAME}"
 !define MUI_LANGDLL_INFO "Please select a language / الرجاء اختيار اللغة"
+; ask every time a person runs the Setup (an earlier answer only picks the default)
+!define MUI_LANGDLL_ALWAYSSHOW
 
 Function .onInit
 
@@ -107,6 +111,8 @@ FunctionEnd
 !insertmacro MUI_PAGE_LICENSE "${LICENSE_FILE}"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
+; the add-on steps for every chosen browser (function at the end of this file)
+Page custom NdmAddonsPage
 !insertmacro MUI_PAGE_FINISH
 
 ;Uninstallation Pages
@@ -143,10 +149,6 @@ LangString NDM_SEC_EDGE ${LANG_ENGLISH} "Edge extension"
 LangString NDM_SEC_EDGE ${LANG_ARABIC} "إضافة Edge"
 LangString NDM_SEC_USERDATA ${LANG_ENGLISH} "Remove User Data"
 LangString NDM_SEC_USERDATA ${LANG_ARABIC} "حذف بيانات المستخدم"
-LangString NDM_CHROME_STEPS ${LANG_ENGLISH} "Add the extension to Chrome (only once, it stays after that):$\r$\n$\r$\n1. Turn on Developer mode (top right of the page that just opened)$\r$\n2. Click Load unpacked$\r$\n3. Pick the folder that just opened:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
-LangString NDM_CHROME_STEPS ${LANG_ARABIC} "إضافة الامتداد إلى Chrome (مرة واحدة فقط ويبقى بعدها):$\r$\n$\r$\n1. فعّل Developer mode (أعلى يمين الصفحة التي فُتحت)$\r$\n2. اضغط Load unpacked$\r$\n3. اختر المجلد الذي فُتح:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
-LangString NDM_EDGE_STEPS ${LANG_ENGLISH} "Add the extension to Edge (only once, it stays after that):$\r$\n$\r$\n1. Turn on Developer mode (left side of the page that just opened)$\r$\n2. Click Load unpacked$\r$\n3. Pick the folder that just opened:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
-LangString NDM_EDGE_STEPS ${LANG_ARABIC} "إضافة الامتداد إلى Edge (مرة واحدة فقط ويبقى بعدها):$\r$\n$\r$\n1. فعّل Developer mode (يسار الصفحة التي فُتحت)$\r$\n2. اضغط Load unpacked$\r$\n3. اختر المجلد الذي فُتح:$\r$\n${INSTALL_DIR}\app\resources\addons\chrome"
 
 ; a macro clear files to cleanup installation folder
 !macro clearFiles
@@ -304,26 +306,10 @@ Section "$(NDM_SEC_FIREFOX)" SecFirefox
     ${EndIf}
 SectionEnd
 Section "$(NDM_SEC_CHROME)" SecChrome
-    ; Chrome / Edge only install store add-ons by themselves; for ours the user loads the folder once
-    ; (it stays installed after that, the folder sits inside the app and does not move)
-    ${IfNot} ${Silent}
-        !insertmacro findBrowser "chrome.exe" $1
-        ${If} $1 != ""
-            Exec '"$1" "chrome://extensions"'
-            ExecShell "open" "${INSTALL_DIR}\app\resources\addons\chrome"
-            MessageBox MB_OK|MB_ICONINFORMATION "$(NDM_CHROME_STEPS)"
-        ${EndIf}
-    ${EndIf}
+    ; Chrome only installs store add-ons by itself; the page after the install shows the one-time steps
 SectionEnd
 Section "$(NDM_SEC_EDGE)" SecEdge
-    ${IfNot} ${Silent}
-        !insertmacro findBrowser "msedge.exe" $1
-        ${If} $1 != ""
-            Exec '"$1" "edge://extensions"'
-            ExecShell "open" "${INSTALL_DIR}\app\resources\addons\chrome"
-            MessageBox MB_OK|MB_ICONINFORMATION "$(NDM_EDGE_STEPS)"
-        ${EndIf}
-    ${EndIf}
+    ; installed from the Edge Add-ons store, the page after the install opens it
 SectionEnd
 SectionGroupEnd
 
@@ -363,3 +349,99 @@ Section "Uninstall"
     ; remove auto start on boot registry
     DeleteRegValue SHCTX "${REG_RUN_KEY}" "${APP_NAME}"
 SectionEnd
+
+; ---- Net Download Manager: page after the install with the add-on steps for each browser ----
+!define EDGE_STORE_URL "https://microsoftedge.microsoft.com/addons/detail/lccdhoiokomnkflbefggcbofjimmnlah"
+!define NDM_ADDONS_DIR "${INSTALL_DIR}\app\resources\addons"
+
+LangString NDM_ADDON_TITLE ${LANG_ENGLISH} "Add the browser add-on"
+LangString NDM_ADDON_TITLE ${LANG_ARABIC} "إضافة البرنامج إلى المتصفح"
+LangString NDM_ADDON_SUB ${LANG_ENGLISH} "Do this once for each browser. After that the add-on stays."
+LangString NDM_ADDON_SUB ${LANG_ARABIC} "مرة واحدة لكل متصفح، وبعدها تبقى الإضافة دائمًا."
+LangString NDM_ADDON_EDGE ${LANG_ENGLISH} "Microsoft Edge: click the button, then click Get on the store page."
+LangString NDM_ADDON_EDGE ${LANG_ARABIC} "Microsoft Edge: اضغط الزر ثم اضغط Get في صفحة المتجر."
+LangString NDM_ADDON_EDGE_BTN ${LANG_ENGLISH} "Open Edge store"
+LangString NDM_ADDON_EDGE_BTN ${LANG_ARABIC} "فتح متجر Edge"
+LangString NDM_ADDON_CHROME ${LANG_ENGLISH} "Google Chrome: open the extensions page, turn on Developer mode (top right), click Load unpacked and pick the add-on folder."
+LangString NDM_ADDON_CHROME ${LANG_ARABIC} "Google Chrome: افتح صفحة الإضافات، فعّل Developer mode (أعلى اليمين)، اضغط Load unpacked واختر مجلد الإضافة."
+LangString NDM_ADDON_CHROME_BTN ${LANG_ENGLISH} "Open Chrome"
+LangString NDM_ADDON_CHROME_BTN ${LANG_ARABIC} "فتح Chrome"
+LangString NDM_ADDON_FIREFOX ${LANG_ENGLISH} "Mozilla Firefox: the add-on is already added. Next time Firefox starts it asks once, click Enable. If it does not ask: Menu, Add-ons, the gear button, Install Add-on From File, then pick the .xpi file in the add-on folder."
+LangString NDM_ADDON_FIREFOX ${LANG_ARABIC} "Mozilla Firefox: الإضافة مضافة بالفعل. عند فتح Firefox المرة القادمة سيسألك مرة واحدة، اضغط Enable. لو لم يسأل: القائمة، Add-ons، زر الترس، Install Add-on From File، ثم اختر ملف .xpi من مجلد الإضافة."
+LangString NDM_ADDON_FOLDER_BTN ${LANG_ENGLISH} "Open add-on folder"
+LangString NDM_ADDON_FOLDER_BTN ${LANG_ARABIC} "فتح مجلد الإضافة"
+
+Var NdmAddonsDialog
+Var NdmAddonsY
+
+Function NdmOpenEdgeStore
+    !insertmacro findBrowser "msedge.exe" $1
+    ${If} $1 != ""
+        Exec '"$1" "${EDGE_STORE_URL}"'
+    ${Else}
+        ExecShell "open" "${EDGE_STORE_URL}"
+    ${EndIf}
+FunctionEnd
+
+Function NdmOpenChrome
+    !insertmacro findBrowser "chrome.exe" $1
+    ${If} $1 != ""
+        Exec '"$1" "chrome://extensions"'
+    ${EndIf}
+    ExecShell "open" "${NDM_ADDONS_DIR}\chrome"
+FunctionEnd
+
+Function NdmOpenFirefoxFolder
+    ExecShell "open" "${NDM_ADDONS_DIR}"
+FunctionEnd
+
+Function NdmAddonsPage
+    ; nothing to show when no browser add-on was chosen
+    ${IfNot} ${SectionIsSelected} ${SecEdge}
+    ${AndIfNot} ${SectionIsSelected} ${SecChrome}
+    ${AndIfNot} ${SectionIsSelected} ${SecFirefox}
+        Abort
+    ${EndIf}
+    !insertmacro MUI_HEADER_TEXT "$(NDM_ADDON_TITLE)" "$(NDM_ADDON_SUB)"
+    nsDialogs::Create 1018
+    Pop $NdmAddonsDialog
+    ${If} $NdmAddonsDialog == error
+        Abort
+    ${EndIf}
+    ; $NdmAddonsY = top of the next row in dialog units, $3 = the same with the "u" unit
+    StrCpy $NdmAddonsY 0
+
+    ${If} ${SectionIsSelected} ${SecEdge}
+        StrCpy $3 "$NdmAddonsY"
+        StrCpy $3 "$3u"
+        ${NSD_CreateLabel} 0u $3 210u 24u "$(NDM_ADDON_EDGE)"
+        Pop $0
+        ${NSD_CreateButton} 218u $3 82u 15u "$(NDM_ADDON_EDGE_BTN)"
+        Pop $0
+        ${NSD_OnClick} $0 NdmOpenEdgeStore
+        IntOp $NdmAddonsY $NdmAddonsY + 30
+    ${EndIf}
+
+    ${If} ${SectionIsSelected} ${SecChrome}
+        StrCpy $3 "$NdmAddonsY"
+        StrCpy $3 "$3u"
+        ${NSD_CreateLabel} 0u $3 210u 34u "$(NDM_ADDON_CHROME)"
+        Pop $0
+        ${NSD_CreateButton} 218u $3 82u 15u "$(NDM_ADDON_CHROME_BTN)"
+        Pop $0
+        ${NSD_OnClick} $0 NdmOpenChrome
+        IntOp $NdmAddonsY $NdmAddonsY + 40
+    ${EndIf}
+
+    ${If} ${SectionIsSelected} ${SecFirefox}
+        StrCpy $3 "$NdmAddonsY"
+        StrCpy $3 "$3u"
+        ${NSD_CreateLabel} 0u $3 210u 50u "$(NDM_ADDON_FIREFOX)"
+        Pop $0
+        ${NSD_CreateButton} 218u $3 82u 15u "$(NDM_ADDON_FOLDER_BTN)"
+        Pop $0
+        ${NSD_OnClick} $0 NdmOpenFirefoxFolder
+    ${EndIf}
+
+    nsDialogs::Show
+FunctionEnd
