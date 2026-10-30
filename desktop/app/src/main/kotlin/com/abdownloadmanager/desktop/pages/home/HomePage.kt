@@ -216,9 +216,11 @@ fun HomePage(component: HomeComponent) {
         WindowEnd {
             HomeSearch(
                 component = component,
+                // slim and centered in the title bar, with the same space above and below
                 modifier = Modifier
                     .fillMaxHeight()
-                    .padding(vertical = 2.dp)
+                    .wrapContentHeight()
+                    .height(26.dp)
             )
         }
     } else {
@@ -932,7 +934,7 @@ fun HomeSearch(
             modifier = modifier
                 .width(
                     animateDpAsState(
-                        if (isFocused) 220.dp else 180.dp
+                        if (isFocused) 260.dp else 220.dp
                     ).value
                 )
         )
