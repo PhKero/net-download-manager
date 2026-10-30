@@ -36,5 +36,19 @@ object FilenameFixer {
             .ifThen(Platform.isWindows()) {
                 trimEnd(' ', '.')
             }
+            .let(::limitLength)
+    }
+
+    // Windows refuses names over 255 characters ("Write Error"); links with long tokens produce such names.
+    // Keep it well under that so the whole path also stays short.
+    private const val MAX_NAME_LENGTH = 120
+
+    /** shortens a too long name and keeps its extension */
+    fun limitLength(name: String): String {
+        if (name.length <= MAX_NAME_LENGTH) return name
+        val extension = name.substringAfterLast('.', "").takeIf { it.isNotEmpty() && it.length <= 8 && it.all(Char::isLetterOrDigit) }
+        val suffix = extension?.let { ".$it" }.orEmpty()
+        val base = name.dropLast(suffix.length).take(MAX_NAME_LENGTH - suffix.length).trimEnd(' ', '.')
+        return base + suffix
     }
 }

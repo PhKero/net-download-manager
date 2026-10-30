@@ -33,13 +33,47 @@ class HttpLinkChecker(
     }
 
     private fun updateNameAndLength(responseInfo: HttpResponseInfo?) {
-        val suggestedName = responseInfo
-            ?.fileName ?: HttpUrlUtils.extractNameFromLink(credentials.value.link)
+        val suggestedName = (responseInfo?.fileName ?: HttpUrlUtils.extractNameFromLink(credentials.value.link))
             ?.let(FilenameFixer::fix)
+            ?.let { withExtensionFromContentType(it, responseInfo) }
         val length = responseInfo?.run {
             totalLength.takeIf { isSuccessFul }
         }
         _suggestedName.update { suggestedName }
         _length.update { length }
+    }
+
+    /** a name taken from a link often has no extension (e.g. a token); add the one the server's file type tells */
+    private fun withExtensionFromContentType(name: String, responseInfo: HttpResponseInfo?): String {
+        if ('.' in name.takeLast(9)) return name
+        val type = responseInfo?.responseHeaders?.get("content-type")
+            ?.substringBefore(';')?.trim()?.lowercase() ?: return name
+        val extension = when (type) {
+            "video/mp4" -> "mp4"
+            "video/webm" -> "webm"
+            "video/x-matroska" -> "mkv"
+            "video/quicktime" -> "mov"
+            "video/x-msvideo" -> "avi"
+            "video/mp2t" -> "ts"
+            "audio/mpeg" -> "mp3"
+            "audio/mp4" -> "m4a"
+            "audio/aac" -> "aac"
+            "audio/ogg" -> "ogg"
+            "audio/wav", "audio/x-wav" -> "wav"
+            "audio/flac" -> "flac"
+            "image/jpeg" -> "jpg"
+            "image/png" -> "png"
+            "image/gif" -> "gif"
+            "image/webp" -> "webp"
+            "application/pdf" -> "pdf"
+            "application/zip", "application/x-zip-compressed" -> "zip"
+            "application/x-rar-compressed", "application/vnd.rar" -> "rar"
+            "application/x-7z-compressed" -> "7z"
+            "application/vnd.android.package-archive" -> "apk"
+            "application/x-msdownload" -> "exe"
+            "application/x-msi" -> "msi"
+            else -> return name
+        }
+        return FilenameFixer.limitLength("$name.$extension")
     }
 }

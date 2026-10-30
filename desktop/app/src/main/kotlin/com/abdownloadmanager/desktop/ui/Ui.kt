@@ -261,7 +261,12 @@ private fun SystemTray(
             }
         }
         // IDM style: hovering the tray icon lists what is downloading right now
-        val active by component.downloadSystem.downloadMonitor.activeDownloadListFlow.collectAsState()
+        // note: activeDownloadListFlow holds every unfinished download (paused and failed too),
+        // only the ones really downloading count here
+        val unfinished by component.downloadSystem.downloadMonitor.activeDownloadListFlow.collectAsState()
+        val active = remember(unfinished) {
+            unfinished.filter { it.status is ir.amirab.downloader.downloaditem.DownloadJobStatus.IsActive }
+        }
         val tooltip = if (active.isEmpty()) {
             AppInfo.displayName
         } else {
@@ -287,17 +292,14 @@ private fun SystemTray(
         }
         // it lists the running downloads plus the ones sent to the tray from their window (even when paused)
         val sentToTray by SentToTray.ids.collectAsState()
-        val allDownloads by component.downloadSystem.downloadMonitor.downloadListFlow.collectAsState()
-        val trayItems = remember(active, sentToTray, allDownloads) {
+        val trayItems = remember(active, sentToTray, unfinished) {
             val activeIds = active.map { it.id }.toSet()
-            val sent = allDownloads
-                .filterIsInstance<ProcessingDownloadItemState>()
-                .filter { it.id in sentToTray && it.id !in activeIds }
+            val sent = unfinished.filter { it.id in sentToTray && it.id !in activeIds }
             active + sent
         }
-        LaunchedEffect(allDownloads) {
+        LaunchedEffect(unfinished) {
             // finished or deleted downloads leave the tray list
-            SentToTray.keepOnly(allDownloads.filterIsInstance<ProcessingDownloadItemState>().map { it.id }.toSet())
+            SentToTray.keepOnly(unfinished.map { it.id }.toSet())
         }
         LaunchedEffect(trayItems) { downloadsTray.update(trayItems) }
         DisposableEffect(Unit) { onDispose { downloadsTray.dispose() } }

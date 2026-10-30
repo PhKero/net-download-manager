@@ -64,6 +64,11 @@ internal fun CommonTitleBarContent(
                                 wrapContentWidth()
                             }
                     }
+                    // a long title (e.g. a long file name) is cut with "..." instead of pushing
+                    // the buttons at the end (like "send to tray") out of the window
+                    .ifThen(!titlePosition.centered && start == null) {
+                        weight(1f)
+                    }
                     .padding(titlePosition.padding),
                 title = title
             )
@@ -87,7 +92,7 @@ internal fun CommonTitleBarContent(
                 title = title
             )
         }
-        if (!titlePosition.centered && !titlePosition.afterStart) {
+        if (!titlePosition.centered && !titlePosition.afterStart && start != null) {
             Spacer(Modifier.weight(1f))
         }
         end?.let {

@@ -69,8 +69,11 @@ class IntegrationHandlerImp : IntegrationHandler, KoinComponent {
             addDownloaderInUiProps.credentials,
             basicDownloadItem = BasicDownloadItem(
                 folder = task.folder ?: appSettings.saveLocation.value,
-                name = task.name ?: addDownloaderInUiProps.extraConfig.suggestedName
-                ?: task.downloadSource.link.substringAfterLast("/"),
+                // fixed + shortened: a link that ends with a long token must not become an invalid file name
+                name = com.abdownloadmanager.shared.util.FilenameFixer.fix(
+                    task.name ?: addDownloaderInUiProps.extraConfig.suggestedName
+                    ?: task.downloadSource.link.substringAfterLast("/").substringBefore('?')
+                ),
             ),
         )
         val id = downloadSystem.addDownload(
