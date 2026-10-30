@@ -37,16 +37,24 @@ sealed class SettingSection(
     val icon: IconSource,
     val name: StringSource,
 ) {
+    // IDM Options tabs: General, Save to, Downloads, Connection, Sounds (+ our Appearance and Video & Extras)
+    data object General :
+        SettingSection(MyIcons.settings, tr("General", "عام"))
+
     data object Appearance :
         SettingSection(MyIcons.appearance, Res.string.appearance.asStringSource())
 
-    //    TODO ADD Network section (proxy , etc..)
-    //    data object Network : SettingSections(MyIcons.network, "Network")
-    data object DownloadEngine :
-        SettingSection(MyIcons.downloadEngine, Res.string.download_engine.asStringSource())
+    data object SaveTo :
+        SettingSection(MyIcons.folder, tr("Save to", "الحفظ في"))
 
-    data object BrowserIntegration :
-        SettingSection(MyIcons.network, Res.string.browser_integration.asStringSource())
+    data object Downloads :
+        SettingSection(MyIcons.downloadEngine, tr("Downloads", "التحميلات"))
+
+    data object Connection :
+        SettingSection(MyIcons.network, tr("Connection", "الاتصال"))
+
+    data object Sounds :
+        SettingSection(MyIcons.speaker, tr("Sounds", "الأصوات"))
 
     /** features added in this custom build */
     data object VideoExtras :
@@ -103,17 +111,43 @@ class DesktopSettingsComponent(
                     ),
                     ConfigurableGroup(
                         nestedConfigurable = listOf(
-                            CommonSettings.autoStartConfig(appSettings),
-                            DesktopSettings.useSystemTray(appSettings),
-                        )
-                    ),
-                    ConfigurableGroup(
-                        nestedConfigurable = listOf(
                             CommonSettings.sizeUnit(appRepository, scope),
                             CommonSettings.speedUnit(appRepository, scope),
                             CommonSettings.useAverageSpeedConfig(appRepository),
                         )
                     ),
+                    ConfigurableGroup(
+                        nestedConfigurable = listOf(
+                            DesktopSettings.renderApi(customRenderApi),
+                        )
+                    )
+                )
+
+                General -> listOf(
+                    ConfigurableGroup(
+                        nestedConfigurable = listOf(
+                            CommonSettings.autoStartConfig(appSettings),
+                            DesktopSettings.useSystemTray(appSettings),
+                        )
+                    ),
+                    ConfigurableGroup(
+                        groupTitle = MutableStateFlow(Res.string.browser_integration.asStringSource()),
+                        nestedConfigurable = listOf(
+                            CommonSettings.browserIntegrationEnabled(appRepository),
+                            CommonSettings.browserIntegrationPort(appRepository),
+                            CommonSettings.apiAuthEnabled(appRepository),
+                            CommonSettings.apiAuthKey(appRepository),
+                        )
+                    ),
+                    ConfigurableGroup(
+                        nestedConfigurable = listOf(
+                            CommonSettings.autoShowDownloadProgressWindow(appSettings),
+                            CommonSettings.showDownloadFinishWindow(appSettings),
+                        )
+                    ),
+                )
+
+                Sounds -> listOf(
                     ConfigurableGroup(
                         mainConfigurable = CommonSettings.playSoundNotification(appSettings),
                         nestedVisible = appSettings.notificationSound,
@@ -123,17 +157,6 @@ class DesktopSettingsComponent(
                             CommonSettings.successNotificationSound(appSettings),
                         )
                     ),
-                    ConfigurableGroup(
-                        nestedConfigurable = listOf(
-                            CommonSettings.autoShowDownloadProgressWindow(appSettings),
-                            CommonSettings.showDownloadFinishWindow(appSettings),
-                        )
-                    ),
-                    ConfigurableGroup(
-                        nestedConfigurable = listOf(
-                            DesktopSettings.renderApi(customRenderApi),
-                        )
-                    )
                 )
 
 //                Network -> listOf()
@@ -275,24 +298,24 @@ class DesktopSettingsComponent(
                     )
                 }
 
-                BrowserIntegration -> listOf(
-                    ConfigurableGroup(
-                        nestedConfigurable = listOf(
-                            CommonSettings.browserIntegrationEnabled(appRepository),
-                            CommonSettings.browserIntegrationPort(appRepository),
-                            CommonSettings.apiAuthEnabled(appRepository),
-                            CommonSettings.apiAuthKey(appRepository),
-                        )
-                    )
-                )
-
-                DownloadEngine -> listOf(
+                SaveTo -> listOf(
                     ConfigurableGroup(
                         nestedConfigurable = listOf(
                             CommonSettings.defaultDownloadFolderConfig(appSettings),
                             CommonSettings.useCategoryByDefault(appSettings),
                         )
                     ),
+                    ConfigurableGroup(
+                        nestedConfigurable = listOf(
+                            CommonSettings.trackDeletedFilesOnDisk(appRepository),
+                            CommonSettings.appendExtensionToIncompleteDownloads(appRepository),
+                            CommonSettings.deletePartialFileOnDownloadCancellation(appSettings),
+                            CommonSettings.useSparseFileAllocation(appRepository),
+                        )
+                    ),
+                )
+
+                Downloads -> listOf(
                     ConfigurableGroup(
                         nestedConfigurable = listOf(
                             CommonSettings.useSpeedLimitConfig(appRepository),
@@ -309,6 +332,9 @@ class DesktopSettingsComponent(
                             CommonSettings.perHostSettings(perHostSettingsPageManager),
                         )
                     ),
+                )
+
+                Connection -> listOf(
                     ConfigurableGroup(
                         nestedConfigurable = listOf(
                             CommonSettings.proxyConfig(proxyManager),
@@ -316,14 +342,6 @@ class DesktopSettingsComponent(
                             CommonSettings.userAgent(appSettings),
                             CommonSettings.ignoreSSLCertificates(appSettings),
                             CommonSettings.useServerLastModified(appRepository),
-                        )
-                    ),
-                    ConfigurableGroup(
-                        nestedConfigurable = listOf(
-                            CommonSettings.trackDeletedFilesOnDisk(appRepository),
-                            CommonSettings.appendExtensionToIncompleteDownloads(appRepository),
-                            CommonSettings.deletePartialFileOnDownloadCancellation(appSettings),
-                            CommonSettings.useSparseFileAllocation(appRepository),
                         )
                     ),
                 )
@@ -362,13 +380,15 @@ class DesktopSettingsComponent(
     }
 
     var pages = listOf(
+        General,
         Appearance,
-//        Network,
-        DownloadEngine,
-        BrowserIntegration,
+        SaveTo,
+        Downloads,
+        Connection,
+        Sounds,
         SettingSection.VideoExtras,
     )
-    private val _currentPage: MutableStateFlow<SettingSection> = MutableStateFlow(Appearance)
+    private val _currentPage: MutableStateFlow<SettingSection> = MutableStateFlow(General)
     val currentPage: StateFlow<SettingSection> = _currentPage.asStateFlow()
     fun setCurrentPage(section: SettingSection) {
         _currentPage.value = section

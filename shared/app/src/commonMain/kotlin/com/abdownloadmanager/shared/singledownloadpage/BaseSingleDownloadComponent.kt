@@ -211,6 +211,19 @@ abstract class BaseSingleDownloadComponent<
         }
     }
 
+    /** IDM: closing the download window (X) stops the download; the downloaded part is kept */
+    fun stopAndClose() {
+        applicationScope.launch {
+            val state = itemStateFlow.value as? ProcessingDownloadItemState
+            if (state?.canBePaused() == true) {
+                downloadSystem.manualPause(downloadId)
+            }
+        }
+        scope.launch {
+            onDismiss()
+        }
+    }
+
     fun cancel() {
         applicationScope.launch {
             val state = itemStateFlow.value as? ProcessingDownloadItemState

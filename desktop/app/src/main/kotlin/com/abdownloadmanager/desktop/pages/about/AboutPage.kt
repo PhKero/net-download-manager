@@ -103,6 +103,12 @@ private fun AppIconAndVersion(
                 )
             }
         }
+        // IDM About: a "Check for update" button right under the version
+        Spacer(Modifier.size(12.dp))
+        ActionButton(
+            text = tr("Check for update", "البحث عن تحديث").rememberString(),
+            onClick = { com.abdownloadmanager.desktop.actions.checkForUpdateAction() },
+        )
     }
 }
 
@@ -144,6 +150,13 @@ private fun RenderAppInfo(
                 LinkText(
                     text = websiteDisplayName,
                     link = websiteUrl,
+                    showExternalIndicator = false,
+                )
+                Spacer(Modifier.height(6.dp))
+                // IDM About: where to get support
+                LinkText(
+                    text = tr("Support: report a problem", "الدعم: بلّغ عن مشكلة").rememberString(),
+                    link = "https://github.com/PhKero/net-download-manager/issues",
                     showExternalIndicator = false,
                 )
                 Spacer(Modifier.height(16.dp))

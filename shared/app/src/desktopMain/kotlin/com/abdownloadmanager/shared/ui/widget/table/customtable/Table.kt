@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.unit.Dp
@@ -49,6 +51,8 @@ val LocalCellPadding = compositionLocalOf {
 val LocalTableSize = compositionLocalOf<TableSize> {
     error("LocalTableConstraints not provided")
 }
+// true when the table draws its grid lines as straight lines over the whole table (see gridLinesStartPadding)
+val LocalTableGridOverlay = compositionLocalOf { false }
 val LocalResizeCellsOnResizeTable = compositionLocalOf<Boolean> {
     error("LocalResizeCellsOnResizeTable not provided")
 }
@@ -62,6 +66,9 @@ fun <T, C : TableCell<T>> Table(
     listState: LazyListState = rememberLazyListState(),
     horizontalScrollState: ScrollState = rememberScrollState(),
     resizeCellsOnResizeTableWidth: Boolean = false,
+    // IDM style: when set, each column divider is ONE straight line from the header down through the rows
+    // (the value is the horizontal padding the header / row wrappers put before the first cell)
+    gridLinesStartPadding: Dp? = null,
     renderHeaderCell: @Composable (C) -> Unit = { DefaultRenderHeader(it) },
     drawOnEmpty: @Composable BoxScope.() -> Unit = {},
     wrapHeader: @Composable TableScope.(rowContent: @Composable () -> Unit) -> Unit = { content -> content() },
@@ -91,8 +98,11 @@ fun <T, C : TableCell<T>> Table(
                         visibleWidth = maxWidth,
                         visibleHeight = maxWidth,
                     ),
-                    LocalResizeCellsOnResizeTable provides resizeCellsOnResizeTableWidth
+                    LocalResizeCellsOnResizeTable provides resizeCellsOnResizeTableWidth,
+                    LocalTableGridOverlay provides (gridLinesStartPadding != null),
                 ) {
+                    var headerHeightPx by remember { mutableStateOf(0) }
+                    val overlayGridColor = myColors.onBackground / 0.12f
                     var showColumnConfig by remember {
                         mutableStateOf(false)
                     }
@@ -104,8 +114,32 @@ fun <T, C : TableCell<T>> Table(
                     }
                     Column(
                         modifier = Modifier
-                            .horizontalScroll(horizontalScrollState),
+                            .horizontalScroll(horizontalScrollState)
+                            .ifThen(gridLinesStartPadding != null) {
+                                drawWithContent {
+                                    drawContent()
+                                    val start = (gridLinesStartPadding ?: 0.dp).toPx()
+                                    val visibleItems = listState.layoutInfo.visibleItemsInfo
+                                    val rowsBottom = visibleItems.lastOrNull()?.let { it.offset + it.size } ?: 0
+                                    val bottom = (headerHeightPx + rowsBottom).toFloat().coerceAtMost(size.height)
+                                    val widths = cells.map { (customWidths[it] ?: it.size.defaultWidth).toPx() }
+                                    val right = start + widths.sum()
+                                    // a line under every row
+                                    for (item in visibleItems) {
+                                        val y = headerHeightPx + item.offset + item.size - 0.5f
+                                        if (y > size.height) break
+                                        drawLine(overlayGridColor, Offset(start, y), Offset(right, y), 1f)
+                                    }
+                                    // one straight divider per column, header and rows together
+                                    var x = start
+                                    for (w in widths) {
+                                        x += w
+                                        drawLine(overlayGridColor, Offset(x - 0.5f, 0f), Offset(x - 0.5f, bottom), 1f)
+                                    }
+                                }
+                            },
                     ) {
+                        Box(Modifier.onSizeChanged { headerHeightPx = it.height }) {
                         scope.wrapHeader {
                             Row(
                                 Modifier
@@ -155,6 +189,7 @@ fun <T, C : TableCell<T>> Table(
                                 }
                             }
                         }
+                        }
                         val sortedList = remember(list, sortedBy) {
                             tableState.sortedList(list, sortedBy)
                         }
@@ -174,21 +209,25 @@ fun <T, C : TableCell<T>> Table(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
                                             .height(IntrinsicSize.Max)
-                                            .drawBehind {
-                                                drawLine(
-                                                    gridColor,
-                                                    Offset(0f, size.height - 0.5f),
-                                                    Offset(size.width, size.height - 0.5f),
-                                                    1f,
-                                                )
+                                            .ifThen(gridLinesStartPadding == null) {
+                                                drawBehind {
+                                                    drawLine(
+                                                        gridColor,
+                                                        Offset(0f, size.height - 0.5f),
+                                                        Offset(size.width, size.height - 0.5f),
+                                                        1f,
+                                                    )
+                                                }
                                             },
                                     ) {
                                         cells.forEach { cell ->
                                             Box(
                                                 Modifier.width(customWidths[cell] ?: cell.size.defaultWidth)
                                                     .fillMaxHeight()
-                                                    .drawBehind {
-                                                        drawLine(gridColor, Offset(size.width - 0.5f, 0f), Offset(size.width - 0.5f, size.height), 1f)
+                                                    .ifThen(gridLinesStartPadding == null) {
+                                                        drawBehind {
+                                                            drawLine(gridColor, Offset(size.width - 0.5f, 0f), Offset(size.width - 0.5f, size.height), 1f)
+                                                        }
                                                     }
                                                     .padding(LocalCellPadding.current)
                                             ) {

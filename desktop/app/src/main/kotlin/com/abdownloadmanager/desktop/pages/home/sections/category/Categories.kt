@@ -52,6 +52,14 @@ import com.abdownloadmanager.shared.util.ui.theme.mySpacings
 import ir.amirab.util.compose.resources.myStringResource
 import ir.amirab.util.ifThen
 import sh.calvin.reorderable.ReorderableColumn
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import ir.amirab.util.compose.IconSource
 import sh.calvin.reorderable.ReorderableListItemScope
 
 
@@ -104,19 +112,22 @@ private fun ReorderableListItemScope.CategoryFilterItem(
                 myStringResource(Res.string.move_to_this_category),
             )
         }
+        // IDM tree: a guide line from the parent down to this folder
+        val guideColor = myColors.onBackground / 0.25f
+        Canvas(Modifier.matchParentSize().padding(start = 21.dp)) {
+            val x = 0.5f
+            drawLine(guideColor, Offset(x, 0f), Offset(x, size.height), 1f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(2f, 2f)))
+            drawLine(guideColor, Offset(x, size.height / 2), Offset(10.dp.toPx(), size.height / 2), 1f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(2f, 2f)))
+        }
         Row(
             modifier = Modifier
-                .padding(start = 24.dp)
+                .padding(start = 32.dp)
                 .padding(horizontal = 4.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            WithContentAlpha(if (isSelected) 1f else 0.75f) {
+            WithContentAlpha(if (isSelected) 1f else 0.85f) {
                 val iconPainter = category.rememberIconPainter()
-                MyIcon(
-                    iconPainter ?: MyIcons.folder,
-                    null,
-                    Modifier.size(16.dp),
-                )
+                TreeFolderIcon(iconPainter ?: MyIcons.folder)
                 Spacer(Modifier.width(4.dp))
                 Text(
                     category.name,
@@ -170,6 +181,60 @@ private fun ReorderableListItemScope.CategoryFilterItem(
     }
 }
 
+/** IDM style tree expander, our own drawing: a small box with + or - */
+@Composable
+private fun TreeExpander(isExpanded: Boolean, onClick: () -> Unit) {
+    val color = myColors.onBackground / 0.6f
+    Box(
+        Modifier
+            .size(18.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.size(11.dp)) {
+            val s = size.width
+            drawRect(color, style = Stroke(1f))
+            drawLine(color, Offset(s * 0.25f, s / 2), Offset(s * 0.75f, s / 2), 1.5f)
+            if (!isExpanded) {
+                drawLine(color, Offset(s / 2, s * 0.25f), Offset(s / 2, s * 0.75f), 1.5f)
+            }
+        }
+    }
+}
+
+/** IDM style yellow folder, our own drawing, with the category's own icon small on it */
+@Composable
+private fun TreeFolderIcon(icon: IconSource, open: Boolean = false) {
+    Box(Modifier.size(20.dp, 16.dp), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            val dark = Color(0xFFD4A017)
+            val light = Color(0xFFFFD866)
+            // the tab at the back
+            drawRoundRect(dark, Offset(w * 0.04f, h * 0.06f), Size(w * 0.42f, h * 0.3f), CornerRadius(w * 0.06f))
+            // the body
+            drawRoundRect(
+                Brush.verticalGradient(listOf(light, Color(0xFFF2B705))),
+                Offset(0f, h * 0.2f),
+                Size(w, h * 0.8f),
+                CornerRadius(w * 0.08f),
+            )
+            if (open) {
+                drawRoundRect(Color.White.copy(alpha = 0.35f), Offset(w * 0.06f, h * 0.28f), Size(w * 0.88f, h * 0.18f), CornerRadius(w * 0.04f))
+            }
+            drawRoundRect(dark, Offset(0f, h * 0.2f), Size(w, h * 0.8f), CornerRadius(w * 0.08f), style = Stroke(1f))
+        }
+        MyIcon(
+            icon,
+            null,
+            Modifier.padding(top = 3.dp).size(9.dp),
+            tint = Color(0xFF6B4E00),
+        )
+    }
+}
+
 @Composable
 fun StatusFilterItem(
     isExpanded: Boolean,
@@ -216,16 +281,15 @@ fun StatusFilterItem(
             ) {
                 Row(
                     Modifier.padding(vertical = 4.dp)
-                        .padding(start = 16.dp)
+                        .padding(start = 4.dp)
                         .padding(end = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    WithContentAlpha(if (isSelected) 1f else 0.75f) {
-                        MyIcon(
-                            statusFilter.icon,
-                            null,
-                            Modifier.size(mySpacings.iconSize)
-                        )
+                    WithContentAlpha(if (isSelected) 1f else 0.85f) {
+                        // IDM tree: [+] / [-] box to open and close the folder
+                        TreeExpander(isExpanded) { onRequestExpand(!isExpanded) }
+                        Spacer(Modifier.width(4.dp))
+                        TreeFolderIcon(statusFilter.icon, open = isExpanded)
                         Spacer(Modifier.width(4.dp))
                         Text(
                             statusFilter.name.rememberString(),
@@ -235,17 +299,7 @@ fun StatusFilterItem(
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                         )
-                        MyIcon(
-                            MyIcons.up, null, Modifier
-                                .fillMaxHeight().wrapContentHeight()
-                                .clip(CircleShape)
-                                .size(24.dp)
-                                .clickable {
-                                    onRequestExpand(!isExpanded)
-                                }
-                                .padding(6.dp)
-                                .width(16.dp)
-                                .rotate(if (isExpanded) 0f else 180f))
+
                     }
                 }
                 AnimatedVisibility(

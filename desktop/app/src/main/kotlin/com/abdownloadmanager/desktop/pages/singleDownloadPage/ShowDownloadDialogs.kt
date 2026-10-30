@@ -29,6 +29,26 @@ import java.awt.Taskbar
 import java.awt.Window
 import com.abdownloadmanager.desktop.utils.RememberWindowSize
 import com.abdownloadmanager.desktop.utils.WindowSizeMemory
+import com.abdownloadmanager.desktop.ui.SentToTray
+import com.abdownloadmanager.desktop.window.custom.WindowEnd
+import com.abdownloadmanager.shared.ui.widget.Tooltip
+import com.abdownloadmanager.shared.util.ui.myColors
+import ir.amirab.util.compose.tr
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 
 @Composable
 private fun getDownloadTitle(itemState: IDownloadItemState): String {
@@ -114,8 +134,9 @@ private fun CompletedWindow(
     val onRequestClose = {
         singleDownloadComponent.close()
     }
-    val defaultHeight = 160f
-    val defaultWidth = 450f
+    // taller and wider than before: it now also shows the address and the saved path (IDM "Download complete")
+    val defaultHeight = 220f
+    val defaultWidth = 520f
     val uiScale = LocalUiScale.current
     val state = rememberWindowState(
         initialBoundsProvider = WindowBoundsProvider(
@@ -166,8 +187,18 @@ private fun ProgressWindow(
     singleDownloadComponent: DesktopSingleDownloadComponent,
     itemState: ProcessingDownloadItemState,
 ) {
+    // IDM: X stops the download; "send to tray" only hides the window
     val onRequestClose = {
+        SentToTray.remove(singleDownloadComponent.downloadId)
+        singleDownloadComponent.stopAndClose()
+    }
+    val onSendToTray = {
+        SentToTray.add(singleDownloadComponent.downloadId)
         singleDownloadComponent.close()
+    }
+    LaunchedEffect(Unit) {
+        // the window is open again, so it is no longer only in the tray
+        SentToTray.remove(singleDownloadComponent.downloadId)
     }
     val uiScale = LocalUiScale.current
     val defaultHeight = 290f.applyUiScale(uiScale)
@@ -214,6 +245,9 @@ private fun ProgressWindow(
             itemState = itemState,
         )
         RememberWindowSize(sizeKey, state)
+        WindowEnd {
+            SendToTrayButton(onSendToTray)
+        }
         // IDM style: the window's taskbar button fills with the download progress
         val percent = itemState.percent
         val isPaused = itemState.status is ir.amirab.downloader.downloaditem.DownloadJobStatus.CanBeResumed
@@ -247,6 +281,43 @@ private fun ProgressWindow(
                 singleDownloadComponent,
                 itemState,
             )
+        }
+    }
+}
+
+/** title bar button next to minimize: our own drawing, an arrow going down into a tray */
+@Composable
+private fun SendToTrayButton(onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val color = myColors.onBackground
+    Tooltip(
+        tooltip = tr("Send to tray (keeps downloading)", "إرسال للتراي (التحميل يكمل)"),
+        anchor = Alignment.BottomCenter,
+        alignment = Alignment.BottomCenter,
+    ) {
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .width(48.dp)
+                .background(if (isHovered) color.copy(alpha = 0.1f) else Color.Transparent)
+                .hoverable(interactionSource)
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(Modifier.size(12.dp)) {
+                val w = size.width
+                val h = size.height
+                val stroke = w * 0.11f
+                // arrow
+                drawLine(color, Offset(w * 0.5f, 0f), Offset(w * 0.5f, h * 0.62f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(w * 0.26f, h * 0.4f), Offset(w * 0.5f, h * 0.64f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(w * 0.74f, h * 0.4f), Offset(w * 0.5f, h * 0.64f), stroke, StrokeCap.Round)
+                // tray
+                drawLine(color, Offset(0f, h * 0.7f), Offset(0f, h * 0.96f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(0f, h * 0.96f), Offset(w, h * 0.96f), stroke, StrokeCap.Round)
+                drawLine(color, Offset(w, h * 0.7f), Offset(w, h * 0.96f), stroke, StrokeCap.Round)
+            }
         }
     }
 }

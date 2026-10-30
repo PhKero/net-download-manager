@@ -1,5 +1,8 @@
 package com.abdownloadmanager.desktop.pages.settings
 
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+
 import com.abdownloadmanager.shared.util.ui.WithContentAlpha
 import com.abdownloadmanager.desktop.window.custom.WindowIcon
 import ir.amirab.util.compose.IconSource
@@ -153,6 +156,51 @@ private fun SideBarItem(icon: IconSource, name: String, isSelected: Boolean, onC
 }
 
 @Composable
+private fun OptionsTabs(settingsComponent: DesktopSettingsComponent) {
+    val current by settingsComponent.currentPage.collectAsState()
+    val lineColor = myColors.onBackground / 0.15f
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .drawBehind {
+                drawLine(lineColor, Offset(0f, size.height - 0.5f), Offset(size.width, size.height - 0.5f), 1f)
+            }
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        for (page in settingsComponent.pages) {
+            val isSelected = page == current
+            val shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+            Row(
+                Modifier
+                    .padding(end = 2.dp)
+                    .clip(shape)
+                    .ifThen(isSelected) {
+                        background(myColors.surface)
+                            .border(1.dp, lineColor, shape)
+                    }
+                    .selectable(selected = isSelected, onClick = { settingsComponent.setCurrentPage(page) })
+                    .padding(horizontal = 12.dp, vertical = if (isSelected) 8.dp else 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                WithContentAlpha(if (isSelected) 1f else 0.7f) {
+                    MyIcon(page.icon, null, Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        page.name.rememberString(),
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = myTextSizes.base,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun SettingsPage(
     settingsComponent: DesktopSettingsComponent,
     onDismissRequest: () -> Unit,
@@ -166,22 +214,10 @@ fun SettingsPage(
                 .height(1.dp)
                 .background(myColors.surface)
         )
-        Row {
-            var sideBarWidth by remember { mutableStateOf(250.dp) }
-            SideBar(
-                settingsComponent,
-                Modifier
-                    .fillMaxHeight()
-                    .width(sideBarWidth)
-                    .padding(8.dp)
-            )
+        // IDM Options: the pages are tabs across the top
+        Column {
+            OptionsTabs(settingsComponent)
             val currentConfigurables by settingsComponent.configurables.collectAsState()
-            Handle(
-                Modifier.width(5.dp).fillMaxHeight(),
-                orientation = Orientation.Horizontal
-            ) {
-                sideBarWidth = (sideBarWidth + it).coerceIn(150.dp..300.dp)
-            }
             AnimatedContent(currentConfigurables) { configurableGroups ->
                 val scrollState = rememberScrollState()
                 val scrollbarAdapter = rememberScrollbarAdapter(scrollState)

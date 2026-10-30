@@ -114,7 +114,8 @@ fun RowScope.MaybeResizeableCell(
                     orientation = Orientation.Horizontal,
                     mInteractionSource,
                     color = myColors.onBackground / 50,
-                    inactiveColor = myColors.onBackground / 10,
+                    // the table draws the straight divider itself, so the handle only shows while hovered
+                    inactiveColor = if (LocalTableGridOverlay.current) Color.Transparent else myColors.onBackground / 10,
                 ) { delta ->
                     onResizeCell {
                         it + delta
@@ -333,7 +334,16 @@ class TableState<Item, Cell : TableCell<Item>>(
             val cellsThatHaveCustomWidth = findCellById(s.sizes.keys)
             cellsThatHaveCustomWidth.associateWith { s.sizes[it.id]!!.dp }
         }
-        setOrder(findCellById(s.order))
+        // columns added in a newer version are not in the saved state yet:
+        // put them next to their neighbour and show them if they are visible by default
+        val savedIds = s.order.toSet()
+        val newCells = cells.filter { it.id !in savedIds }
+        val order = findCellById(s.order).toMutableList()
+        for (cell in newCells) {
+            val before = cells.subList(0, cells.indexOf(cell)).lastOrNull { it in order }
+            order.add(if (before == null) 0 else order.indexOf(before) + 1, cell)
+        }
+        setOrder(order)
         setSortBy(
             s.sortBy?.let { sortBy ->
                 findCellById(sortBy.name)?.let {
@@ -341,7 +351,7 @@ class TableState<Item, Cell : TableCell<Item>>(
                 }
             }
         )
-        setVisibleCells(findCellById(s.visibleCells))
+        setVisibleCells(findCellById(s.visibleCells) + newCells.filter { it in initialVisibleItems })
     }
 
 

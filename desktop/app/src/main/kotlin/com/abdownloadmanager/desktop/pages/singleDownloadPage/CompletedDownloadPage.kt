@@ -33,6 +33,9 @@ import ir.amirab.downloader.monitor.CompletedDownloadItemState
 import ir.amirab.util.compose.asStringSource
 import ir.amirab.util.compose.resources.myStringResource
 import ir.amirab.util.desktop.isShiftPressed
+import ir.amirab.util.compose.tr
+import com.abdownloadmanager.shared.util.ui.WithContentAlpha
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun CompletedDownloadPage(
@@ -56,6 +59,24 @@ fun CompletedDownloadPage(
             RenderName(
                 Modifier.weight(1f),
                 completedDownloadItemState.name,
+            )
+        }
+        // IDM "Download complete": where it came from and where it was saved
+        Column(
+            Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .background(myColors.surface / 0.4f)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            InfoRow(
+                tr("Address", "العنوان").rememberString(),
+                completedDownloadItemState.downloadLink,
+            )
+            InfoRow(
+                tr("Saved to", "اتحفظ في").rememberString(),
+                java.io.File(completedDownloadItemState.folder, completedDownloadItemState.name).path,
             )
         }
         Spacer(Modifier.weight(1f))
@@ -93,6 +114,14 @@ private fun Actions(
                 onLongClick = {
                     component.openFile(useChooser = true)
                 }
+            )
+            Spacer(Modifier.width(8.dp))
+            ActionButton(
+                tr("Open with...", "فتح باستخدام...").rememberString(),
+                modifier = Modifier,
+                onClick = {
+                    component.openFile(useChooser = true)
+                },
             )
             Spacer(Modifier.width(8.dp))
             ActionButton(
@@ -146,6 +175,22 @@ private fun Actions(
                 onClick = component::close,
             )
         }
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        WithContentAlpha(0.7f) {
+            Text(label, modifier = Modifier.width(72.dp), fontSize = myTextSizes.sm)
+        }
+        Text(
+            value,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontSize = myTextSizes.sm,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

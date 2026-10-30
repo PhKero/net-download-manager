@@ -173,6 +173,12 @@ class HomeComponent(
     ) {
         requestDelete(downloadSystem.getFinishedDownloadIds())
     }
+    private val grabberAction = simpleAction(
+        title = tr("Grabber", "جامع الملفات"),
+        icon = MyIcons.earth,
+    ) {
+        com.abdownloadmanager.desktop.extras.SiteGrabber.open()
+    }
     private val tellAFriendAction = simpleAction(
         title = tr("Tell a Friend", "أخبر صديقًا"),
         icon = MyIcons.share,
@@ -440,7 +446,7 @@ class HomeComponent(
         "$metaKey I" to downloadActions.openDownloadDialogAction
     }
     val showLabels = appSettings.showIconLabels
-    // IDM toolbar: Add URL, Resume, Stop, Stop All, Delete, Delete Completed, Options, Scheduler, Start Queue, Stop Queue, Tell a Friend
+    // IDM toolbar: Add URL, Resume, Stop, Stop All, Delete, Delete Completed, Options, Scheduler, Start Queue, Stop Queue, Grabber, Tell a Friend
     val headerActions = buildMenu {
         +newDownloadAction
         +downloadActions.resumeAction
@@ -452,6 +458,7 @@ class HomeComponent(
         +openQueuesAction
         +startQueueGroupAction
         +stopQueueGroupAction
+        +grabberAction
         +tellAFriendAction
     }
 

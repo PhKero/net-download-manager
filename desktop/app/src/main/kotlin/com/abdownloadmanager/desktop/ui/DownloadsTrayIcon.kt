@@ -1,7 +1,11 @@
 package com.abdownloadmanager.desktop.ui
 
+import ir.amirab.downloader.downloaditem.DownloadJobStatus
 import ir.amirab.downloader.monitor.ProcessingDownloadItemState
 import ir.amirab.util.compose.tr
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Color
@@ -20,6 +24,19 @@ import javax.swing.JPopupMenu
 import javax.swing.SwingUtilities
 import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
+
+/**
+ * Downloads whose window was "sent to tray": they stay in the downloads tray icon
+ * even when paused, until they finish, are reopened or closed with X / Cancel.
+ */
+object SentToTray {
+    private val _ids = MutableStateFlow<Set<Long>>(emptySet())
+    val ids: StateFlow<Set<Long>> = _ids
+
+    fun add(id: Long) = _ids.update { it + id }
+    fun remove(id: Long) = _ids.update { it - id }
+    fun keepOnly(existing: Set<Long>) = _ids.update { it.intersect(existing) }
+}
 
 /**
  * IDM style: while something downloads, a second tray icon sits next to the app icon.
@@ -98,7 +115,8 @@ class DownloadsTrayIcon(
             val line = buildString {
                 append(item.name.take(45))
                 item.percent?.let { append("   ").append(it).append('%') }
-                if (item.speed > 0) append("   ").append(humanSpeed(item.speed))
+                if (!item.isRunning()) append("   ").append(tr("Paused", "متوقف مؤقتًا").getString())
+                else if (item.speed > 0) append("   ").append(humanSpeed(item.speed))
             }
             menu.add(JMenuItem(line).apply {
                 if (arabic) componentOrientation = ComponentOrientation.RIGHT_TO_LEFT
@@ -126,9 +144,12 @@ class DownloadsTrayIcon(
     }
 
     private fun tooltipOf(active: List<ProcessingDownloadItemState>): String {
-        val speed = active.sumOf { it.speed }
-        val count = active.size
-        val text = tr("$count downloading", "$count قيد التحميل").getString()
+        val running = active.filter { it.isRunning() }
+        val speed = running.sumOf { it.speed }
+        val count = running.size
+        val paused = active.size - count
+        var text = tr("$count downloading", "$count قيد التحميل").getString()
+        if (paused > 0) text += tr(", $paused paused", "، $paused متوقف").getString()
         val withSpeed = if (speed > 0) "$text - ${humanSpeed(speed)}" else text
         val percent = totalPercent(active)
         return "$withSpeed - $percent%"
@@ -172,6 +193,8 @@ class DownloadsTrayIcon(
         g.dispose()
         return img
     }
+
+    private fun ProcessingDownloadItemState.isRunning() = status is DownloadJobStatus.IsActive
 
     private fun isArabic() = runCatching {
         ir.amirab.util.compose.localizationmanager.LanguageManager.instance.isRtl.value

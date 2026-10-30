@@ -1,6 +1,7 @@
 package com.abdownloadmanager.desktop.ui
 
 import ir.amirab.util.compose.tr
+import ir.amirab.downloader.monitor.ProcessingDownloadItemState
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.application
 import com.abdownloadmanager.desktop.AppArguments
@@ -24,6 +25,10 @@ import com.abdownloadmanager.desktop.pages.enterurl.EnterNewDownloadWindow
 import com.abdownloadmanager.desktop.pages.extenallibs.ShowOpenSourceLibraries
 import com.abdownloadmanager.desktop.pages.home.HomeWindow
 import com.abdownloadmanager.desktop.extras.MiniSpeedWindow
+import com.abdownloadmanager.desktop.extras.SiteGrabberWindow
+import com.abdownloadmanager.shared.pages.adddownload.AddDownloadCredentialsInUiProps
+import com.abdownloadmanager.shared.pages.adddownload.ImportOptions
+import ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials
 import com.abdownloadmanager.desktop.pages.newQueue.NewQueueDialog
 import com.abdownloadmanager.desktop.pages.perhostsettings.PerHostSettingsWindow
 import com.abdownloadmanager.desktop.pages.poweractionalert.PowerActionAlert
@@ -149,6 +154,22 @@ object Ui : KoinComponent {
                 PerHostSettingsWindow(appComponent)
                 DownloadErrorDialog(appComponent)
                 MiniSpeedWindow(appComponent)
+                // IDM "Grabber": the files it finds go to the normal add-download dialog
+                SiteGrabberWindow { links, referer, user, pass ->
+                    appComponent.openAddDownloadDialog(
+                        links.map {
+                            AddDownloadCredentialsInUiProps(
+                                credentials = HttpDownloadCredentials(
+                                    link = it,
+                                    downloadPage = referer,
+                                    username = user,
+                                    password = pass,
+                                )
+                            )
+                        },
+                        ImportOptions(),
+                    )
+                }
             }
         }
     }
@@ -264,7 +285,21 @@ private fun SystemTray(
                 onOpenList = { showDownloadList.onClick() },
             )
         }
-        LaunchedEffect(active) { downloadsTray.update(active) }
+        // it lists the running downloads plus the ones sent to the tray from their window (even when paused)
+        val sentToTray by SentToTray.ids.collectAsState()
+        val allDownloads by component.downloadSystem.downloadMonitor.downloadListFlow.collectAsState()
+        val trayItems = remember(active, sentToTray, allDownloads) {
+            val activeIds = active.map { it.id }.toSet()
+            val sent = allDownloads
+                .filterIsInstance<ProcessingDownloadItemState>()
+                .filter { it.id in sentToTray && it.id !in activeIds }
+            active + sent
+        }
+        LaunchedEffect(allDownloads) {
+            // finished or deleted downloads leave the tray list
+            SentToTray.keepOnly(allDownloads.filterIsInstance<ProcessingDownloadItemState>().map { it.id }.toSet())
+        }
+        LaunchedEffect(trayItems) { downloadsTray.update(trayItems) }
         DisposableEffect(Unit) { onDispose { downloadsTray.dispose() } }
     } else {
         LaunchedEffect(Unit) { PlatformDockToggler.show() }

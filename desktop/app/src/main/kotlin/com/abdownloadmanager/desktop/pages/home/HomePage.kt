@@ -379,6 +379,7 @@ fun HomePage(component: HomeComponent) {
                         tableState = tableState,
                         fileIconProvider = component.fileIconProvider,
                         categoryManager = component.categoryManager,
+                        queueManager = component.queueManager,
                         lazyListState = lazyListState,
                         failedDownloadReasons = component.failedDownloads.collectAsState().value,
                     )

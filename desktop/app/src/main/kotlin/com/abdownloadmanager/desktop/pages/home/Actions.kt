@@ -27,6 +27,11 @@ import ir.amirab.util.compose.IconSource
 import ir.amirab.util.compose.StringSource
 import androidx.compose.ui.graphics.Color
 import com.abdownloadmanager.shared.util.ui.icon.MyIcons
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
 
 @Composable
 fun Actions(
@@ -138,15 +143,51 @@ private fun toolbarLabelOf(icon: IconSource?, title: String): String {
     }
 }
 
-/** IDM style colorful toolbar: each kind of action keeps its own color in every theme */
-@Composable
-private fun toolbarTintOf(icon: IconSource): Color? {
+/** IDM style colorful toolbar: each kind of action has its own colored tile, the same in every theme */
+private fun toolbarColorOf(icon: IconSource): Color {
     return when (icon) {
-        MyIcons.resume, MyIcons.queueStart -> myColors.success
-        MyIcons.pause, MyIcons.stop -> myColors.warning
-        MyIcons.queueStop, MyIcons.remove, MyIcons.clear -> myColors.error
-        MyIcons.queue, MyIcons.add, MyIcons.share -> myColors.info
-        else -> null
+        MyIcons.add -> Color(0xFF2F80ED)
+        MyIcons.resume, MyIcons.queueStart -> Color(0xFF27AE60)
+        MyIcons.pause -> Color(0xFFF2994A)
+        MyIcons.stop -> Color(0xFFE67E22)
+        MyIcons.remove, MyIcons.clear -> Color(0xFFEB5757)
+        MyIcons.queueStop -> Color(0xFFC0392B)
+        MyIcons.settings -> Color(0xFF607D8B)
+        MyIcons.queue -> Color(0xFF9B51E0)
+        MyIcons.share -> Color(0xFF00A3A3)
+        MyIcons.earth -> Color(0xFF16A085)
+        else -> Color(0xFF3F6AD8)
+    }
+}
+
+/** our own drawing: a raised rounded tile with a light-to-dark gradient and the white icon on it */
+@Composable
+private fun ToolbarTile(icon: IconSource, size: androidx.compose.ui.unit.Dp) {
+    val color = toolbarColorOf(icon)
+    val shape = RoundedCornerShape(size * 0.26f)
+    Box(
+        Modifier
+            .size(size)
+            .shadow(2.dp, shape)
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(lerp(color, Color.White, 0.35f), color, lerp(color, Color.Black, 0.18f))))
+            .border(1.dp, lerp(color, Color.Black, 0.25f).copy(alpha = 0.6f), shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        // glossy top half
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(0.45f)
+                .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.05f))))
+        )
+        MyIcon(
+            icon = icon,
+            contentDescription = null,
+            modifier = Modifier.size(size * 0.58f),
+            tint = Color.White,
+        )
     }
 }
 
@@ -174,23 +215,8 @@ private fun ActionIconWithLabel(
             WithContentColor(myColors.onBackground) {
                 WithContentAlpha(1f) {
                     icon?.let {
-                        // large icon with the label under it, like the classic IDM toolbar
-                        val iconSize = 30.dp
-                        val tint = toolbarTintOf(it)
-                        if (tint != null) {
-                            MyIcon(
-                                icon = it,
-                                contentDescription = null,
-                                modifier = Modifier.size(iconSize),
-                                tint = tint,
-                            )
-                        } else {
-                            MyIcon(
-                                icon = it,
-                                contentDescription = null,
-                                modifier = Modifier.size(iconSize)
-                            )
-                        }
+                        // large colored tile with the label under it, like the classic IDM toolbar
+                        ToolbarTile(it, if (showLabels) 32.dp else 28.dp)
                     }
                     if (showLabels) {
                         Spacer(Modifier.size(4.dp))

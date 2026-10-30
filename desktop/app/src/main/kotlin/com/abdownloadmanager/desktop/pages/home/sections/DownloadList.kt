@@ -5,6 +5,12 @@ import com.abdownloadmanager.shared.util.ui.WithContentAlpha
 import com.abdownloadmanager.shared.util.ui.myColors
 import com.abdownloadmanager.shared.ui.widget.CheckBox
 import com.abdownloadmanager.shared.ui.widget.Text
+import com.abdownloadmanager.shared.util.ui.theme.myTextSizes
+import ir.amirab.downloader.queue.QueueManager
+import ir.amirab.util.compose.tr
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import androidx.compose.ui.text.style.TextOverflow
 import com.abdownloadmanager.shared.ui.widget.table.customtable.Table
 import com.abdownloadmanager.shared.ui.widget.table.customtable.styled.MyStyledTableHeader
 import com.abdownloadmanager.shared.ui.widget.menu.custom.LocalMenuDisabledItemBehavior
@@ -84,6 +90,7 @@ fun DownloadList(
     lastSelectedId: Long?,
     fileIconProvider: FileIconProvider,
     categoryManager: CategoryManager,
+    queueManager: QueueManager,
     lazyListState: LazyListState,
     failedDownloadReasons: Map<Long, DownloadErrorReason>,
 ) {
@@ -124,9 +131,18 @@ fun DownloadList(
         )
     ) {
         val itemHorizontalPadding = 16.dp
+        // IDM "Q" column: the queue each download is in
+        val queues by queueManager.queues.collectAsState()
+        val queueNameOf by remember(queues) {
+            if (queues.isEmpty()) flowOf(emptyMap())
+            else combine(queues.map { it.queueModel }) { models ->
+                buildMap { models.forEach { m -> m.queueItems.forEach { put(it, m.name) } } }
+            }
+        }.collectAsState(emptyMap<Long, String>())
         Table(
             tableState = tableState,
             listState = lazyListState,
+            gridLinesStartPadding = itemHorizontalPadding,
             key = { it.id },
             list = downloadList,
             modifier = modifier
@@ -335,6 +351,14 @@ fun DownloadList(
                 DownloadListCells.Location -> {
                     LocationCell(item)
                 }
+
+                DownloadListCells.Queue -> {
+                    SimpleTextCell(queueNameOf[item.id].orEmpty())
+                }
+
+                DownloadListCells.Description -> {
+                    SimpleTextCell(item.downloadLink)
+                }
             }
         }
     }
@@ -427,8 +451,9 @@ sealed interface DownloadListCells : TableCell<IDownloadItemState> {
         SortableCell<IDownloadItemState> {
         override fun comparator(): Comparator<IDownloadItemState> = compareBy { it.startTime }
 
-        override val id: String = "Date Started"
-        override val name: StringSource = Res.string.date_started.asStringSource()
+        // IDM "Last Try Date": when the download was last started
+        override val id: String = "Last Try Date"
+        override val name: StringSource = tr("Last Try Date", "آخر محاولة")
         override val size: CellSize = CellSize.Resizeable(90.dp..150.dp, 100.dp)
     }
 
@@ -450,28 +475,58 @@ sealed interface DownloadListCells : TableCell<IDownloadItemState> {
         override val size: CellSize = CellSize.Resizeable(50.dp..1000.dp, 200.dp)
     }
 
+    data object Queue : DownloadListCells,
+        SortableCell<IDownloadItemState> {
+        override fun comparator(): Comparator<IDownloadItemState> = compareBy { it.id }
+
+        override val id: String = "Q"
+        override val name: StringSource = "Q".asStringSource()
+        override val size: CellSize = CellSize.Resizeable(30.dp..200.dp, 60.dp)
+    }
+
+    data object Description : DownloadListCells,
+        SortableCell<IDownloadItemState> {
+        override fun comparator(): Comparator<IDownloadItemState> = compareBy { it.downloadLink }
+
+        override val id: String = "Description"
+        override val name: StringSource = tr("Description", "الوصف")
+        override val size: CellSize = CellSize.Resizeable(80.dp..1000.dp, 220.dp)
+    }
+
     companion object {
         val allCells: List<DownloadListCells> = listOf(
-            // IDM order: name, size, status, time left, transfer rate, date
+            // IDM order: File Name | Q | Size | Status | Time left | Transfer rate | Last Try Date | Description
             Check,
             Name,
+            Queue,
             Size,
             Status,
             TimeLeft,
             Speed,
-            DateAdded,
             DateStarted,
+            Description,
+            DateAdded,
             DateFinished,
             Location,
         )
         private val disabledByDefault = listOf(
-            DateStarted,
+            DateAdded,
             DateFinished,
             Location,
         )
         val initiallyVisibleCells: List<DownloadListCells> = allCells
             .filterNot { it in disabledByDefault }
     }
+}
+
+@Composable
+private fun SimpleTextCell(text: String) {
+    Text(
+        text,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        fontSize = myTextSizes.sm,
+    )
 }
 
 @Composable
