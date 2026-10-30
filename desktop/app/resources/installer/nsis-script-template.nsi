@@ -294,16 +294,10 @@ SectionEnd
 
 SectionGroup "$(NDM_SEC_BROWSERS)" SecBrowsers
 Section "$(NDM_SEC_FIREFOX)" SecFirefox
-    ; the Mozilla-signed add-on ships with the app; registering it makes Firefox itself ask
-    ; "Net Download Manager added, enable?" on its next start. After that it stays installed.
-    ${If} ${FileExists} "${INSTALL_DIR}\app\resources\addons\net-download-manager-firefox.xpi"
-        WriteRegStr HKCU "Software\Mozilla\Firefox\Extensions" "net-download-manager@phkero" "${INSTALL_DIR}\app\resources\addons\net-download-manager-firefox.xpi"
-    ${ElseIfNot} ${Silent}
-        !insertmacro findBrowser "firefox.exe" $1
-        ${If} $1 != ""
-            Exec '"$1" "${FIREFOX_ADDON_URL}"'
-        ${EndIf}
-    ${EndIf}
+    ; the add-on is public on addons.mozilla.org now: it is added from the store (the page after
+    ; the install opens it), so Firefox keeps it updated. Older Setups registered a bundled copy
+    ; here; remove that so only the store copy is used.
+    DeleteRegValue HKCU "Software\Mozilla\Firefox\Extensions" "net-download-manager@phkero"
 SectionEnd
 Section "$(NDM_SEC_CHROME)" SecChrome
     ; Chrome only installs store add-ons by itself; the page after the install shows the one-time steps
@@ -366,10 +360,10 @@ LangString NDM_ADDON_CHROME ${LANG_ENGLISH} "Google Chrome: open the extensions 
 LangString NDM_ADDON_CHROME ${LANG_ARABIC} "Google Chrome: افتح صفحة الإضافات، فعّل Developer mode (أعلى اليمين)، اضغط Load unpacked واختر مجلد الإضافة."
 LangString NDM_ADDON_CHROME_BTN ${LANG_ENGLISH} "Open Chrome"
 LangString NDM_ADDON_CHROME_BTN ${LANG_ARABIC} "فتح Chrome"
-LangString NDM_ADDON_FIREFOX ${LANG_ENGLISH} "Mozilla Firefox: the add-on is already added. Next time Firefox starts it asks once, click Enable. If it does not ask: Menu, Add-ons, the gear button, Install Add-on From File, then pick the .xpi file in the add-on folder."
-LangString NDM_ADDON_FIREFOX ${LANG_ARABIC} "Mozilla Firefox: الإضافة مضافة بالفعل. عند فتح Firefox المرة القادمة سيسألك مرة واحدة، اضغط Enable. لو لم يسأل: القائمة، Add-ons، زر الترس، Install Add-on From File، ثم اختر ملف .xpi من مجلد الإضافة."
-LangString NDM_ADDON_FOLDER_BTN ${LANG_ENGLISH} "Open add-on folder"
-LangString NDM_ADDON_FOLDER_BTN ${LANG_ARABIC} "فتح مجلد الإضافة"
+LangString NDM_ADDON_FIREFOX ${LANG_ENGLISH} "Mozilla Firefox: click the button, then click Add to Firefox on the store page."
+LangString NDM_ADDON_FIREFOX ${LANG_ARABIC} "Mozilla Firefox: اضغط الزر ثم اضغط Add to Firefox في صفحة المتجر."
+LangString NDM_ADDON_FIREFOX_BTN ${LANG_ENGLISH} "Open Firefox store"
+LangString NDM_ADDON_FIREFOX_BTN ${LANG_ARABIC} "فتح متجر Firefox"
 
 Var NdmAddonsDialog
 Var NdmAddonsY
@@ -391,8 +385,13 @@ Function NdmOpenChrome
     ExecShell "open" "${NDM_ADDONS_DIR}\chrome"
 FunctionEnd
 
-Function NdmOpenFirefoxFolder
-    ExecShell "open" "${NDM_ADDONS_DIR}"
+Function NdmOpenFirefoxStore
+    !insertmacro findBrowser "firefox.exe" $1
+    ${If} $1 != ""
+        Exec '"$1" "${FIREFOX_ADDON_URL}"'
+    ${Else}
+        ExecShell "open" "${FIREFOX_ADDON_URL}"
+    ${EndIf}
 FunctionEnd
 
 Function NdmAddonsPage
@@ -436,11 +435,11 @@ Function NdmAddonsPage
     ${If} ${SectionIsSelected} ${SecFirefox}
         StrCpy $3 "$NdmAddonsY"
         StrCpy $3 "$3u"
-        ${NSD_CreateLabel} 0u $3 210u 50u "$(NDM_ADDON_FIREFOX)"
+        ${NSD_CreateLabel} 0u $3 210u 24u "$(NDM_ADDON_FIREFOX)"
         Pop $0
-        ${NSD_CreateButton} 218u $3 82u 15u "$(NDM_ADDON_FOLDER_BTN)"
+        ${NSD_CreateButton} 218u $3 82u 15u "$(NDM_ADDON_FIREFOX_BTN)"
         Pop $0
-        ${NSD_OnClick} $0 NdmOpenFirefoxFolder
+        ${NSD_OnClick} $0 NdmOpenFirefoxStore
     ${EndIf}
 
     nsDialogs::Show
