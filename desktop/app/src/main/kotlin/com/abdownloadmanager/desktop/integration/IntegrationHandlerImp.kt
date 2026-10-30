@@ -72,6 +72,7 @@ class IntegrationHandlerImp : IntegrationHandler, KoinComponent {
                 // fixed + shortened: a link that ends with a long token must not become an invalid file name
                 name = com.abdownloadmanager.shared.util.FilenameFixer.fix(
                     task.name ?: addDownloaderInUiProps.extraConfig.suggestedName
+                    ?: ir.amirab.util.HttpUrlUtils.extractNameFromLink(task.downloadSource.link)
                     ?: task.downloadSource.link.substringAfterLast("/").substringBefore('?')
                 ),
             ),
