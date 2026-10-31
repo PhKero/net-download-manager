@@ -79,6 +79,8 @@ import com.abdownloadmanager.desktop.extras.DownloadQuota
 import com.abdownloadmanager.desktop.extras.MarkOfTheWeb
 import com.abdownloadmanager.desktop.extras.SpeedSchedule
 import com.abdownloadmanager.desktop.extras.ArchiveExtractor
+import com.abdownloadmanager.desktop.extras.AutoResume
+import kotlin.time.Duration.Companion.seconds
 import java.io.File
 import ir.amirab.util.coroutines.launchWithDeferred
 import ir.amirab.util.desktop.poweraction.PowerActionConfig
@@ -652,6 +654,34 @@ class AppComponent(
                 if (appRepository.isSpeedLimitApplied.value) appRepository.speedLimiter.value.coerceAtLeast(1) else 0
             },
         ).start(scope)
+        AutoResume(
+            downloadSystem = downloadSystem,
+            enabled = extrasSettings.autoResume,
+            onResumed = { count ->
+                sendNotification(
+                    tag = "auto-resume",
+                    title = tr("Internet is back", "النت رجع"),
+                    description = tr("$count download(s) continued by themselves", "$count تحميل كمّل لوحده"),
+                    type = NotificationType.Info,
+                )
+            },
+        ).start(scope)
+        checkAppUpdateWeekly()
+    }
+
+    // users hate update pop-ups that block their work: check once a week, quietly, and only notify
+    private fun checkAppUpdateWeekly() {
+        // a background thread: delay() on the Main (UI) dispatcher never wakes up here
+        scope.launch(Dispatchers.Default) {
+            // after start-up, once the rest of the app (and the updater below) is ready
+            delay(60.seconds)
+            val week = 7 * 24 * 60 * 60 * 1000L
+            if (!extrasSettings.appUpdateWeeklyCheck.value) return@launch
+            if (System.currentTimeMillis() - extrasSettings.appUpdateLastCheck.value < week) return@launch
+            if (updater.quietCheckForUpdate()) {
+                extrasSettings.appUpdateLastCheck.value = System.currentTimeMillis()
+            }
+        }
     }
 
     init {

@@ -37,6 +37,9 @@ private data class ExtrasSettingsModel(
     val autoExtract: Boolean = false,
     val deleteArchiveAfterExtract: Boolean = false,
     val miniWindow: Boolean = false,
+    val autoResume: Boolean = true,
+    val appUpdateWeeklyCheck: Boolean = true,
+    val appUpdateLastCheck: Long = 0,
 )
 
 /**
@@ -68,6 +71,9 @@ class ExtrasSettings(scope: CoroutineScope) {
     val autoExtract = MutableStateFlow(initial.autoExtract)
     val deleteArchiveAfterExtract = MutableStateFlow(initial.deleteArchiveAfterExtract)
     val miniWindow = MutableStateFlow(initial.miniWindow)
+    val autoResume = MutableStateFlow(initial.autoResume)
+    val appUpdateWeeklyCheck = MutableStateFlow(initial.appUpdateWeeklyCheck)
+    val appUpdateLastCheck = MutableStateFlow(initial.appUpdateLastCheck)
 
     init {
         downloadSubtitles.onEach { YtDlpOptions.downloadSubtitles = it }.launchIn(scope)
@@ -87,6 +93,7 @@ class ExtrasSettings(scope: CoroutineScope) {
             markOfTheWeb, subtitlesAsFile,
             speedScheduleEnabled, speedScheduleFrom, speedScheduleTo, speedScheduleLimitKb,
             autoExtract, deleteArchiveAfterExtract, miniWindow,
+            autoResume, appUpdateWeeklyCheck, appUpdateLastCheck,
         )
             .debounce(300.milliseconds)
             .onEach { save() }
@@ -118,6 +125,9 @@ class ExtrasSettings(scope: CoroutineScope) {
                         autoExtract = autoExtract.value,
                         deleteArchiveAfterExtract = deleteArchiveAfterExtract.value,
                         miniWindow = miniWindow.value,
+                        autoResume = autoResume.value,
+                        appUpdateWeeklyCheck = appUpdateWeeklyCheck.value,
+                        appUpdateLastCheck = appUpdateLastCheck.value,
                     )
                 )
             )

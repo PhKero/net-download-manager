@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.koin.core.component.KoinComponent
 import ir.amirab.util.compose.asStringSource
+import ir.amirab.util.compose.tr
+import com.abdownloadmanager.shared.ui.widget.NotificationType
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -68,6 +70,35 @@ class UpdateComponent(
         }
     }
 
+    // a check the app makes by itself: a new version only shows a small notification, never a window
+    private var quietCheck = false
+
+    /** returns true when the check reached the server (so the caller can remember the date) */
+    suspend fun quietCheckForUpdate(): Boolean {
+        quietCheck = true
+        return try {
+            val info = updateManager.checkForUpdate()
+            if (info != null) {
+                notificationSender.sendNotification(
+                    tag = "app-update",
+                    title = tr("New version available", "فيه نسخة جديدة"),
+                    description = tr(
+                        "Version ${info.version} is ready. Help > Check for update to install it.",
+                        "النسخة ${info.version} جاهزة. من Help > Check for update تقدر تسطبها.",
+                    ),
+                    type = NotificationType.Info,
+                )
+            }
+            updateCheckStatus.value !is UpdateCheckStatus.Error
+        } catch (e: Exception) {
+            false
+        } finally {
+            // let the status listener below see the statuses of this check before it acts again
+            delay(2000)
+            quietCheck = false
+        }
+    }
+
     fun requestClose() {
         showNewUpdate.update { false }
     }
@@ -76,6 +107,8 @@ class UpdateComponent(
         updateCheckStatus
             .drop(1) // state flow
             .onEach {
+                // a quiet check shows no "checking" / "no update" / error messages and no window
+                if (quietCheck) return@onEach
                 when (it) {
                     UpdateCheckStatus.Checking -> {
                         sendEffect(Effects.CheckingForUpdate)

@@ -3,6 +3,7 @@ package com.abdownloadmanager.desktop.extras
 import com.abdownloadmanager.shared.util.DownloadSystem
 import ir.amirab.downloader.downloaditem.DownloadJobStatus
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -27,7 +28,8 @@ class DownloadQuota(
     private var pausedByQuota = emptyList<Long>()
 
     fun start(scope: CoroutineScope) {
-        scope.launch {
+        // a background thread: a delay() loop on the Main (UI) dispatcher never woke up here
+        scope.launch(Dispatchers.Default) {
             while (isActive) {
                 delay(2.seconds)
                 runCatching { tick() }

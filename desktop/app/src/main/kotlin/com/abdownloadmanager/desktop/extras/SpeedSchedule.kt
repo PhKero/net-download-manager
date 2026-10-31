@@ -2,6 +2,7 @@ package com.abdownloadmanager.desktop.extras
 
 import ir.amirab.downloader.DownloadManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
@@ -25,7 +26,8 @@ class SpeedSchedule(
     private var appliedLimit: Long? = null
 
     fun start(scope: CoroutineScope) {
-        scope.launch {
+        // a background thread: a delay() loop on the Main (UI) dispatcher never woke up here
+        scope.launch(Dispatchers.Default) {
             while (isActive) {
                 runCatching { tick() }
                 delay(5.seconds)

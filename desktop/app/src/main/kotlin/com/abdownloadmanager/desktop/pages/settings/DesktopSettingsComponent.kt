@@ -198,6 +198,18 @@ class DesktopSettingsComponent(
                             groupTitle = MutableStateFlow(tr("Extras", "إضافات")),
                             nestedConfigurable = listOf(
                                 BooleanConfigurable(
+                                    title = tr("Resume when the internet is back", "كمّل التحميل لما النت يرجع"),
+                                    description = tr("A download that stopped because the connection dropped or the PC slept continues by itself", "التحميل اللي وقف عشان النت فصل أو الجهاز نام بيكمل لوحده"),
+                                    backedBy = extrasSettings.autoResume,
+                                    describe = ::onOff,
+                                ),
+                                BooleanConfigurable(
+                                    title = tr("Check for app updates every week", "البحث عن تحديث للبرنامج كل أسبوع"),
+                                    description = tr("Quietly: a new version only shows a small notification, never a window", "بهدوء: النسخة الجديدة بتظهر في إشعار صغير بس، من غير أي شباك"),
+                                    backedBy = extrasSettings.appUpdateWeeklyCheck,
+                                    describe = ::onOff,
+                                ),
+                                BooleanConfigurable(
                                     title = tr("Monitor clipboard", "مراقبة الحافظة"),
                                     description = tr("When you copy a link to a file or a video page, offer to download it", "عند نسخ رابط ملف أو صفحة فيديو، يعرض البرنامج تحميله"),
                                     backedBy = extrasSettings.clipboardMonitor,
