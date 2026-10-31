@@ -199,6 +199,18 @@ class QueueInfoComponent(
                         range = 1..32,
                         renderMode = IntConfigurable.RenderMode.TextField,
                     ),
+                    // IDM: retries for each file of this queue
+                    IntConfigurable(
+                        tr("Retries for each file", "عدد المحاولات لكل ملف"),
+                        tr("How many times a failing download of this queue is tried again. 0 = the general setting.", "كام مرة التحميل اللي بيفشل في الطابور ده يتجرب تاني. 0 = الإعداد العام."),
+                        backedBy = extraDownloadItemSettingsFlow.mapTwoWayStateFlow(
+                            map = { it.retriesPerFile },
+                            unMap = { copy(retriesPerFile = it) },
+                        ),
+                        describe = { if (it == 0) tr("General setting", "الإعداد العام") else "$it".asStringSource() },
+                        range = 0..100,
+                        renderMode = IntConfigurable.RenderMode.TextField,
+                    ),
                 ),
             ),
             ConfigurableGroup(

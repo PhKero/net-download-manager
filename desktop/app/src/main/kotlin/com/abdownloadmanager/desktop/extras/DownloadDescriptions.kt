@@ -34,7 +34,8 @@ import java.io.File
  * their format and older versions still open them.
  */
 object DownloadDescriptions {
-    private val file = File(System.getProperty("user.home"), ".abdm/descriptions.json")
+    // next to the download list: the ids belong to that list (a portable copy has its own)
+    private val file = com.abdownloadmanager.desktop.utils.AppInfo.definedPaths.downloadDbDir.toFile().resolve("descriptions.json")
     private val json = Json { prettyPrint = true }
     private val serializer = MapSerializer(Long.serializer(), String.serializer())
 

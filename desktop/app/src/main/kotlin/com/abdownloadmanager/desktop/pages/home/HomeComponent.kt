@@ -195,6 +195,15 @@ class HomeComponent(
             +batchDownloadAction
             +newDownloadFromClipboardAction
             separator()
+            // IDM "Tasks > Show drop target"
+            +simpleAction(
+                title = tr("Show / hide drop target", "إظهار / إخفاء مربع السحب"),
+                icon = MyIcons.download,
+            ) {
+                extrasSettings.dropTarget.value = !extrasSettings.dropTarget.value
+            }
+            +grabberAction
+            separator()
             +requestExitAction
         }
         subMenu(Res.string.file.asStringSource()) {

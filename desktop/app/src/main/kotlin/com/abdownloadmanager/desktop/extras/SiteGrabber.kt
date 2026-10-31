@@ -2,6 +2,8 @@ package com.abdownloadmanager.desktop.extras
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -81,7 +83,74 @@ enum class GrabTemplate(val extensions: Set<String>) {
     }
 }
 
-data class GrabbedFile(val url: String, val name: String, val extension: String)
+data class GrabbedFile(val url: String, val name: String, val extension: String, val size: Long? = null)
+
+/** IDM "Grabber projects": the wizard's settings saved under a name (the password is never saved) */
+@kotlinx.serialization.Serializable
+data class GrabberProject(
+    val name: String,
+    val startPage: String,
+    val username: String = "",
+    val template: String = GrabTemplate.AllFiles.name,
+    val customExtensions: String = "",
+    val depth: Int = 1,
+    val maxPages: String = "30",
+    val sameSite: Boolean = true,
+    val includeNames: String = "",
+    val excludeNames: String = "",
+    val minSizeKb: String = "",
+    val maxSizeMb: String = "",
+)
+
+object GrabberProjects {
+    private val file = com.abdownloadmanager.desktop.utils.AppInfo.definedPaths.configDir.toFile().resolve("grabber-projects.json")
+    private val json = kotlinx.serialization.json.Json { prettyPrint = true; ignoreUnknownKeys = true }
+    private val serializer = kotlinx.serialization.builtins.ListSerializer(GrabberProject.serializer())
+    val all = MutableStateFlow(runCatching { json.decodeFromString(serializer, file.readText()) }.getOrDefault(emptyList()))
+
+    fun save(project: GrabberProject) {
+        all.value = all.value.filterNot { it.name.equals(project.name, true) } + project
+        write()
+    }
+
+    fun delete(name: String) {
+        all.value = all.value.filterNot { it.name == name }
+        write()
+    }
+
+    private fun write() {
+        runCatching {
+            file.parentFile.mkdirs()
+            file.writeText(json.encodeToString(serializer, all.value))
+        }
+    }
+}
+
+/** "*thumb*, img_*" style patterns, matched against the file name, case-insensitive */
+private fun wildcardsToRegex(patterns: String): List<Regex> =
+    patterns.split(',', ';', '\n').map { it.trim() }.filter { it.isNotEmpty() }.map { p ->
+        Regex(p.split('*').joinToString(".*") { Regex.escape(it) }, RegexOption.IGNORE_CASE)
+    }
+
+private fun humanSize(bytes: Long): String {
+    val units = listOf("B", "KB", "MB", "GB")
+    var v = bytes.toDouble()
+    var i = 0
+    while (v >= 1024 && i < units.lastIndex) { v /= 1024; i++ }
+    return if (i == 0) "$bytes B" else "%.1f %s".format(v, units[i])
+}
+
+/** the size of a found file, read with a HEAD request (only when a size filter is set) */
+private fun headSize(client: HttpClient, url: String, authHeader: String?): Long? = runCatching {
+    val request = HttpRequest.newBuilder(URI(url))
+        .timeout(Duration.ofSeconds(15))
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Net Download Manager Grabber")
+        .apply { authHeader?.let { header("Authorization", it) } }
+        .method("HEAD", HttpRequest.BodyPublishers.noBody())
+        .build()
+    client.send(request, HttpResponse.BodyHandlers.discarding()).headers()
+        .firstValueAsLong("Content-Length").let { if (it.isPresent) it.asLong else null }
+}.getOrNull()
 
 private val pageExtensions = setOf("", "html", "htm", "php", "asp", "aspx", "jsp", "shtml", "xhtml", "cgi")
 private val knownFileExtensions = GrabTemplate.entries.flatMap { it.extensions }.toSet()
@@ -193,6 +262,27 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
         var depth by remember { mutableStateOf(1) }
         var maxPages by remember { mutableStateOf("30") }
         var sameSite by remember { mutableStateOf(true) }
+        var includeNames by remember { mutableStateOf("") }
+        var excludeNames by remember { mutableStateOf("") }
+        var minSizeKb by remember { mutableStateOf("") }
+        var maxSizeMb by remember { mutableStateOf("") }
+        val savedProjects by GrabberProjects.all.collectAsState()
+
+        fun loadProject(p: GrabberProject) {
+            projectName = p.name
+            startPage = p.startPage
+            username = p.username
+            password = ""
+            template = runCatching { GrabTemplate.valueOf(p.template) }.getOrDefault(GrabTemplate.AllFiles)
+            customExtensions = p.customExtensions
+            depth = p.depth
+            maxPages = p.maxPages
+            sameSite = p.sameSite
+            includeNames = p.includeNames
+            excludeNames = p.excludeNames
+            minSizeKb = p.minSizeKb
+            maxSizeMb = p.maxSizeMb
+        }
         val found = remember { mutableStateListOf<GrabbedFile>() }
         val unchecked = remember { mutableStateListOf<String>() }
         var scannedCount by remember { mutableStateOf(0) }
@@ -214,6 +304,23 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
             val auth = if (username.isNotBlank()) {
                 "Basic " + Base64.getEncoder().encodeToString("$username:$password".toByteArray())
             } else null
+            if (projectName.isNotBlank()) {
+                GrabberProjects.save(
+                    GrabberProject(
+                        projectName.trim(), startPage.trim(), username, template.name, customExtensions,
+                        depth, maxPages, sameSite, includeNames, excludeNames, minSizeKb, maxSizeMb,
+                    )
+                )
+            }
+            val include = wildcardsToRegex(includeNames)
+            val exclude = wildcardsToRegex(excludeNames)
+            val minBytes = minSizeKb.toLongOrNull()?.times(1024)
+            val maxBytes = maxSizeMb.toLongOrNull()?.times(1024 * 1024)
+            val sizeClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(15)).build()
+            val sizeChecks = kotlinx.coroutines.sync.Semaphore(4)
+            fun nameAllowed(name: String) =
+                (include.isEmpty() || include.any { it.matches(name) }) && exclude.none { it.matches(name) }
             val url = startPage.trim().let { if (it.startsWith("http")) it else "https://$it" }
             running = true
             crawlJob = scope.launch {
@@ -227,7 +334,27 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                     onPageScanned = { count, page ->
                         scope.launch { scannedCount = count; currentPage = page }
                     },
-                    onFileFound = { file -> scope.launch { found.add(file) } },
+                    onFileFound = { file ->
+                        if (nameAllowed(file.name)) {
+                            if (minBytes == null && maxBytes == null) {
+                                scope.launch { found.add(file) }
+                            } else {
+                                // size filter: ask the server for the size first (4 at a time)
+                                scope.launch(Dispatchers.IO) {
+                                    sizeChecks.acquire()
+                                    try {
+                                        val size = headSize(sizeClient, file.url, auth)
+                                        val ok = size != null &&
+                                            (minBytes == null || size >= minBytes) &&
+                                            (maxBytes == null || size <= maxBytes)
+                                        if (ok) withContext(Dispatchers.Main) { found.add(file.copy(size = size)) }
+                                    } finally {
+                                        sizeChecks.release()
+                                    }
+                                }
+                            }
+                        }
+                    },
                 )
             }.also { job -> job.invokeOnCompletion { running = false } }
         }
@@ -246,7 +373,23 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when (step) {
                     1 -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        LabeledField(tr("Project name", "اسم المشروع").rememberString(), projectName, { projectName = it }, tr("optional", "اختياري").rememberString())
+                        if (savedProjects.isNotEmpty()) {
+                            WithContentAlpha(0.75f) {
+                                Text(tr("Saved projects (click one to load it)", "مشاريع محفوظة (اضغط على واحد عشان تفتحه)").rememberString(), fontSize = myTextSizes.sm)
+                            }
+                            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                for (p in savedProjects) {
+                                    Row(
+                                        Modifier.background(myColors.surface / 0.8f).padding(start = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(p.name, Modifier.clickable { loadProject(p) }.padding(vertical = 4.dp), fontSize = myTextSizes.sm)
+                                        Text(" ✕", Modifier.clickable { GrabberProjects.delete(p.name) }.padding(4.dp), fontSize = myTextSizes.xs)
+                                    }
+                                }
+                            }
+                        }
+                        LabeledField(tr("Project name", "اسم المشروع").rememberString(), projectName, { projectName = it }, tr("give it a name to save it", "اديله اسم عشان يتحفظ").rememberString())
                         LabeledField(tr("Start page", "صفحة البداية").rememberString(), startPage, { startPage = it }, "https://example.com/files/")
                         Spacer(Modifier.height(6.dp))
                         WithContentAlpha(0.75f) {
@@ -295,6 +438,19 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                             Spacer(Modifier.width(8.dp))
                             Text(tr("Stay on the same site", "خليك في نفس الموقع").rememberString())
                         }
+                        Spacer(Modifier.height(4.dp))
+                        WithContentAlpha(0.75f) {
+                            Text(tr("Filters (optional). Use * for any text, separate with commas.", "فلاتر (اختياري). استخدم * لأي كلام، وافصل بفاصلة.").rememberString(), fontSize = myTextSizes.sm)
+                        }
+                        LabeledField(tr("Only names like", "بس الأسماء اللي زي").rememberString(), includeNames, { includeNames = it }, "*wallpaper*, img_*")
+                        LabeledField(tr("Skip names like", "تجاهل الأسماء اللي زي").rememberString(), excludeNames, { excludeNames = it }, "*thumb*, *small*")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(tr("Size from", "الحجم من").rememberString(), Modifier.width(120.dp))
+                            MyTextField(minSizeKb, { v -> minSizeKb = v.filter { it.isDigit() }.take(9) }, "0", Modifier.width(80.dp))
+                            Text(" KB  " + tr("to", "لحد").rememberString() + "  ")
+                            MyTextField(maxSizeMb, { v -> maxSizeMb = v.filter { it.isDigit() }.take(7) }, "∞", Modifier.width(80.dp))
+                            Text(" MB")
+                        }
                     }
 
                     else -> Column {
@@ -332,6 +488,10 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                                     Spacer(Modifier.width(8.dp))
                                     Text(file.extension.uppercase(), Modifier.width(44.dp), fontSize = myTextSizes.xs, fontWeight = FontWeight.Bold)
                                     Text(file.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    file.size?.let {
+                                        Spacer(Modifier.width(8.dp))
+                                        WithContentAlpha(0.7f) { Text(humanSize(it), fontSize = myTextSizes.xs) }
+                                    }
                                 }
                             }
                         }

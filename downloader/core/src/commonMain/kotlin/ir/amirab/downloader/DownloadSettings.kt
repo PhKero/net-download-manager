@@ -9,6 +9,9 @@ data class DownloadSettings(
     var useSparseFileAllocation: Boolean = true,
     var minPartSize: Long = DEFAULT_MIN_PART_SIZE,
     var maxDownloadRetryCount: Int = 0,
+    // IDM "ignore file modification changes when resuming": some servers send a new ETag with every
+    // request, which made resuming fail with "file changed". The size check still applies.
+    var ignoreETagChangesOnResume: Boolean = false,
     // WARNING: this is used in boot so make sure to update it before booting
     // make it val or add a way to reload it properly
     var appendExtensionToIncompleteDownloads: Boolean = false,

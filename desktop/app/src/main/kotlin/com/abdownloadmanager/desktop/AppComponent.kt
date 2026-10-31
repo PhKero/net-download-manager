@@ -80,6 +80,7 @@ import com.abdownloadmanager.desktop.extras.MarkOfTheWeb
 import com.abdownloadmanager.desktop.extras.SpeedSchedule
 import com.abdownloadmanager.desktop.extras.ArchiveExtractor
 import com.abdownloadmanager.desktop.extras.AutoResume
+import com.abdownloadmanager.desktop.extras.QueueRetries
 import kotlin.time.Duration.Companion.seconds
 import java.io.File
 import ir.amirab.util.coroutines.launchWithDeferred
@@ -667,6 +668,22 @@ class AppComponent(
             },
         ).start(scope)
         checkAppUpdateWeekly()
+        extrasSettings.ignoreFileChangesOnResume
+            .onEach { downloadSystem.downloadManager.settings.ignoreETagChangesOnResume = it }
+            .launchIn(scope)
+        com.abdownloadmanager.desktop.extras.SyncedDownloads.start(scope, downloadSystem) { name ->
+            sendNotification(
+                tag = "sync-updated",
+                title = name.asStringSource(),
+                description = tr("Changed on the site: downloading the new version", "اتغير على الموقع: بيتحمل النسخة الجديدة"),
+                type = NotificationType.Info,
+            )
+        }
+        QueueRetries(
+            downloadSystem = downloadSystem,
+            queueSettings = org.koin.core.context.GlobalContext.get()
+                .get<com.abdownloadmanager.shared.storage.ExtraQueueSettingsStorage<com.abdownloadmanager.desktop.storage.DesktopExtraQueueSettings>>(),
+        ).start(scope)
     }
 
     // users hate update pop-ups that block their work: check once a week, quietly, and only notify
@@ -805,6 +822,11 @@ class AppComponent(
         }
         if (it is DownloadManagerEvents.OnJobStarting) {
             if (appSettings.showDownloadProgressDialog.value) {
+                // IDM "start view: minimized": the window opens in the taskbar, not over your work
+                val alreadyOpen = openedDownloadDialogs.value.any { d -> d.downloadId == it.downloadItem.id }
+                if (extrasSettings.progressWindowMinimized.value && !alreadyOpen) {
+                    com.abdownloadmanager.desktop.pages.singleDownloadPage.ProgressWindowStart.openMinimized(it.downloadItem.id)
+                }
                 openDownloadDialog(it.downloadItem.id)
             }
         }

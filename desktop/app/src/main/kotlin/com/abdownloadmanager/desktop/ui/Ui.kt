@@ -26,6 +26,7 @@ import com.abdownloadmanager.desktop.pages.extenallibs.ShowOpenSourceLibraries
 import com.abdownloadmanager.desktop.pages.home.HomeWindow
 import com.abdownloadmanager.desktop.extras.MiniSpeedWindow
 import com.abdownloadmanager.desktop.extras.SiteGrabberWindow
+import com.abdownloadmanager.desktop.extras.DropTargetWindow
 import com.abdownloadmanager.desktop.extras.DownloadDescriptionWindow
 import com.abdownloadmanager.shared.pages.adddownload.AddDownloadCredentialsInUiProps
 import com.abdownloadmanager.shared.pages.adddownload.ImportOptions
@@ -155,6 +156,7 @@ object Ui : KoinComponent {
                 PerHostSettingsWindow(appComponent)
                 DownloadErrorDialog(appComponent)
                 MiniSpeedWindow(appComponent)
+                DropTargetWindow(appComponent)
                 DownloadDescriptionWindow { id ->
                     appComponent.downloadSystem.downloadMonitor.downloadListFlow.value.find { it.id == id }?.name
                 }

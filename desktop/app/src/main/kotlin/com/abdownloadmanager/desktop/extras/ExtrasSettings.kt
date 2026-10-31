@@ -42,6 +42,10 @@ private data class ExtrasSettingsModel(
     val appUpdateLastCheck: Long = 0,
     // toolbar buttons in order, comma separated keys; empty = the default IDM set
     val toolbarButtons: String = "",
+    val ignoreFileChangesOnResume: Boolean = false,
+    // IDM "start view" of the download window: normal / minimized
+    val progressWindowMinimized: Boolean = false,
+    val dropTarget: Boolean = false,
 )
 
 /**
@@ -49,10 +53,13 @@ private data class ExtrasSettingsModel(
  * (~/.abdm/custom-features.json) so the upstream settings format stays untouched.
  */
 class ExtrasSettings(scope: CoroutineScope) {
-    private val file = File(System.getProperty("user.home"), ".abdm/custom-features.json")
+    // in the app's own config folder, so a portable copy keeps its own settings
+    private val file = com.abdownloadmanager.desktop.utils.AppInfo.definedPaths.configDir.toFile().resolve("custom-features.json")
+    // where versions up to 1.12.2 kept it: read once when the new file does not exist yet
+    private val oldFile = File(System.getProperty("user.home"), ".abdm/custom-features.json")
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
     private val initial = runCatching {
-        json.decodeFromString<ExtrasSettingsModel>(file.readText())
+        json.decodeFromString<ExtrasSettingsModel>((if (file.exists()) file else oldFile).readText())
     }.getOrDefault(ExtrasSettingsModel())
 
     val antivirusScan = MutableStateFlow(initial.antivirusScan)
@@ -77,6 +84,9 @@ class ExtrasSettings(scope: CoroutineScope) {
     val appUpdateWeeklyCheck = MutableStateFlow(initial.appUpdateWeeklyCheck)
     val appUpdateLastCheck = MutableStateFlow(initial.appUpdateLastCheck)
     val toolbarButtons = MutableStateFlow(initial.toolbarButtons)
+    val ignoreFileChangesOnResume = MutableStateFlow(initial.ignoreFileChangesOnResume)
+    val progressWindowMinimized = MutableStateFlow(initial.progressWindowMinimized)
+    val dropTarget = MutableStateFlow(initial.dropTarget)
 
     init {
         downloadSubtitles.onEach { YtDlpOptions.downloadSubtitles = it }.launchIn(scope)
@@ -97,6 +107,7 @@ class ExtrasSettings(scope: CoroutineScope) {
             speedScheduleEnabled, speedScheduleFrom, speedScheduleTo, speedScheduleLimitKb,
             autoExtract, deleteArchiveAfterExtract, miniWindow,
             autoResume, appUpdateWeeklyCheck, appUpdateLastCheck, toolbarButtons,
+            ignoreFileChangesOnResume, progressWindowMinimized, dropTarget,
         )
             .debounce(300.milliseconds)
             .onEach { save() }
@@ -132,6 +143,9 @@ class ExtrasSettings(scope: CoroutineScope) {
                         appUpdateWeeklyCheck = appUpdateWeeklyCheck.value,
                         appUpdateLastCheck = appUpdateLastCheck.value,
                         toolbarButtons = toolbarButtons.value,
+                        ignoreFileChangesOnResume = ignoreFileChangesOnResume.value,
+                        progressWindowMinimized = progressWindowMinimized.value,
+                        dropTarget = dropTarget.value,
                     )
                 )
             )

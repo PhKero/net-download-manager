@@ -13,6 +13,8 @@ data class DesktopExtraQueueSettings(
     val powerActionUseForceOnFinish: Boolean = false,
     // IDM: "open the following file when done" (a program, a .bat, any file); empty = nothing
     val openFileOnFinish: String = "",
+    // IDM "number of retries for each file if downloading failed"; 0 = the app's general setting
+    val retriesPerFile: Int = 0,
 ) : IExtraQueueSettings, ContainsPowerActionConfigOnFinish {
 
     override fun getPowerActionConfigOnFinish() = powerActionTypeOnFinish?.let {

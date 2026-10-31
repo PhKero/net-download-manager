@@ -16,6 +16,7 @@ import ir.amirab.util.compose.action.simpleAction
 import ir.amirab.util.compose.asStringSource
 import ir.amirab.util.compose.tr
 import com.abdownloadmanager.desktop.extras.DownloadDescriptions
+import com.abdownloadmanager.desktop.extras.SyncedDownloads
 import ir.amirab.util.osfileutil.FileUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -72,6 +73,31 @@ class DesktopDownloadActions(
         }
     )
 
+    // IDM "periodic synchronization": check the file once a day and download it again if the site changed it
+    val keepUpdatedAction = simpleAction(
+        title = tr("Keep updated (check daily)", "تحديث تلقائي (فحص يومي)"),
+        icon = MyIcons.refresh,
+        onActionPerformed = {
+            scope.launch {
+                val d = defaultItem.value ?: return@launch
+                SyncedDownloads.toggle(d.id)
+                val on = SyncedDownloads.isSynced(d.id)
+                org.koin.core.context.GlobalContext.get()
+                    .get<com.abdownloadmanager.shared.pagemanager.NotificationSender>()
+                    .sendNotification(
+                        tag = "sync-${d.id}",
+                        title = d.name.asStringSource(),
+                        description = if (on) {
+                            tr("Kept updated: checked once a day, downloaded again if the site changes it", "تحديث تلقائي شغال: بيتفحص مرة في اليوم، ولو الموقع غيّره بيتحمل تاني")
+                        } else {
+                            tr("No longer kept updated", "التحديث التلقائي اتقفل")
+                        },
+                        type = com.abdownloadmanager.shared.ui.widget.NotificationType.Info,
+                    )
+            }
+        }
+    )
+
     val menu: List<MenuItem> = buildMenu {
         +openFileAction
         if (FileUtils.isOpenFileWithSupported) {
@@ -94,6 +120,7 @@ class DesktopDownloadActions(
         }
         +editDownloadAction
         +descriptionAction
+        +keepUpdatedAction
         +fileChecksumAction
         +(openDownloadDialogAction)
     }

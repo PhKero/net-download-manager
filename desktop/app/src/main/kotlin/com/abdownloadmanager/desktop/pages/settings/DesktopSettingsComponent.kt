@@ -142,6 +142,14 @@ class DesktopSettingsComponent(
                     ConfigurableGroup(
                         nestedConfigurable = listOf(
                             CommonSettings.autoShowDownloadProgressWindow(appSettings),
+                            // IDM "start view" of the download window
+                            BooleanConfigurable(
+                                title = tr("Open the download window minimized", "افتح شباك التحميل متصغّر"),
+                                description = tr("When a download starts, its window goes to the taskbar (with the progress) instead of opening over your work", "لما التحميل يبدأ، شباكه بيروح لشريط المهام (وعليه نسبة التحميل) بدل ما يفتح فوق شغلك"),
+                                backedBy = extrasSettings.progressWindowMinimized,
+                                describe = { (if (it) Res.string.enabled else Res.string.disabled).asStringSource() },
+                                visible = appSettings.showDownloadProgressDialog,
+                            ),
                             CommonSettings.showDownloadFinishWindow(appSettings),
                         )
                     ),
@@ -219,6 +227,12 @@ class DesktopSettingsComponent(
                                     title = tr("Scan downloads with antivirus", "فحص التحميلات بمضاد الفيروسات"),
                                     description = tr("Scan each finished file with Microsoft Defender", "فحص كل ملف مكتمل باستخدام Microsoft Defender"),
                                     backedBy = extrasSettings.antivirusScan,
+                                    describe = ::onOff,
+                                ),
+                                BooleanConfigurable(
+                                    title = tr("Drop target", "مربع السحب"),
+                                    description = tr("A small round window on top of everything: drag a link from the browser onto it to download it", "مربع صغير فوق كل الشبابيك: اسحب عليه لينك من المتصفح عشان يتحمل"),
+                                    backedBy = extrasSettings.dropTarget,
                                     describe = ::onOff,
                                 ),
                                 BooleanConfigurable(
@@ -354,6 +368,13 @@ class DesktopSettingsComponent(
                             CommonSettings.userAgent(appSettings),
                             CommonSettings.ignoreSSLCertificates(appSettings),
                             CommonSettings.useServerLastModified(appRepository),
+                            // IDM "ignore file modification changes when resuming"
+                            BooleanConfigurable(
+                                title = tr("Ignore file changes reported by the server when resuming", "تجاهل تغيير الملف اللي السيرفر بيقول عليه عند التكملة"),
+                                description = tr("Some servers send a new file tag with every request, so resuming fails with \"file changed\". Turn this on to keep going. A different file size still stops the download.", "بعض السيرفرات بتبعت علامة جديدة للملف مع كل طلب، فالتكملة بتفشل وبيقول \"الملف اتغير\". فعّل ده عشان يكمل. لو حجم الملف اختلف فعلًا، التحميل هيقف برضو."),
+                                backedBy = extrasSettings.ignoreFileChangesOnResume,
+                                describe = { (if (it) Res.string.enabled else Res.string.disabled).asStringSource() },
+                            ),
                         )
                     ),
                 )

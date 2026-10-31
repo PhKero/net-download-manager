@@ -684,7 +684,12 @@ class HttpDownloadJob(
                 // but we also have etag header
                 // so, we have chance to compare file contents of local and server
                 if (oldServerETag != newServerETag) {
-                    throw FileChangedException.ETagChangedException(oldServerETag, newServerETag)
+                    if (downloadManager.settings.ignoreETagChangesOnResume) {
+                        // the user said this server changes it for nothing: keep going with the new one
+                        downloadItem.serverETag = newServerETag
+                    } else {
+                        throw FileChangedException.ETagChangedException(oldServerETag, newServerETag)
+                    }
                 }
             }
         }

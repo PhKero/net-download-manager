@@ -61,6 +61,16 @@ private fun getDownloadTitle(itemState: IDownloadItemState): String {
     }
 }
 
+/** downloads whose window should open minimized (it opened by itself and the user chose "minimized") */
+object ProgressWindowStart {
+    private val ids = java.util.concurrent.ConcurrentHashMap.newKeySet<Long>()
+    fun openMinimized(id: Long) {
+        ids.add(id)
+    }
+
+    fun consume(id: Long): Boolean = ids.remove(id)
+}
+
 val LocalSingleDownloadPageSizing =
     compositionLocalOf<SingleProgressDownloadPageSizing> { error("LocalSingleBoxSizing not provided") }
 
@@ -245,6 +255,11 @@ private fun ProgressWindow(
             itemState = itemState,
         )
         RememberWindowSize(sizeKey, state)
+        LaunchedEffect(Unit) {
+            if (ProgressWindowStart.consume(singleDownloadComponent.downloadId)) {
+                state.requestMinimized(true)
+            }
+        }
         WindowEnd {
             SendToTrayButton(onSendToTray)
         }
