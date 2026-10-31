@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.*
+import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -300,16 +301,24 @@ fun HomePage(component: HomeComponent) {
                     .background(myColors.surface)
             )
             // IDM style: one toolbar across the whole window, above the categories and the list
+            // right-click it to choose and order its buttons (IDM "Customize toolbar")
+            var showToolbarCustomizer by remember { mutableStateOf(false) }
+            if (showToolbarCustomizer) {
+                ToolbarCustomizeWindow(component, onClose = { showToolbarCustomizer = false })
+            }
             Row(
                 Modifier
                     .fillMaxWidth()
                     .background(myColors.surface)
+                    .onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary)) {
+                        showToolbarCustomizer = true
+                    }
                     .padding(horizontal = 6.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // "Add URL" is the first toolbar button, like IDM
                 Actions(
-                    component.headerActions,
+                    component.headerActions.collectAsState().value,
                     component.showLabels.collectAsState().value
                 )
             }

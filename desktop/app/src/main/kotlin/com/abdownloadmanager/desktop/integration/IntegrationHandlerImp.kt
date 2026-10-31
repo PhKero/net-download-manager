@@ -158,11 +158,20 @@ class IntegrationHandlerImp : IntegrationHandler, KoinComponent {
         private fun convertToDownloadSystemCredentials(it: IDownloadCredentialsFromIntegration): AddDownloadCredentialsInUiProps {
             val credentials = when (it) {
                 is HttpDownloadCredentialsFromIntegration -> {
-                    HttpDownloadCredentials(
-                        link = it.link,
-                        headers = it.headers,
-                        downloadPage = it.downloadPage,
-                    )
+                    // the browser and the command line send every link as "http"; magnet, .torrent
+                    // and FTP links belong to the aria2 downloader, which the HTTP one can't do
+                    if (ir.amirab.downloader.downloaditem.torrent.TorrentLinks.isTorrent(it.link)) {
+                        ir.amirab.downloader.downloaditem.torrent.TorrentDownloadCredentials(
+                            link = it.link,
+                            downloadPage = it.downloadPage,
+                        )
+                    } else {
+                        HttpDownloadCredentials(
+                            link = it.link,
+                            headers = it.headers,
+                            downloadPage = it.downloadPage,
+                        )
+                    }
                 }
 
                 is HLSDownloadCredentialsFromIntegration -> {

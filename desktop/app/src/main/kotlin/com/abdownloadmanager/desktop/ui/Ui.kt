@@ -26,6 +26,7 @@ import com.abdownloadmanager.desktop.pages.extenallibs.ShowOpenSourceLibraries
 import com.abdownloadmanager.desktop.pages.home.HomeWindow
 import com.abdownloadmanager.desktop.extras.MiniSpeedWindow
 import com.abdownloadmanager.desktop.extras.SiteGrabberWindow
+import com.abdownloadmanager.desktop.extras.DownloadDescriptionWindow
 import com.abdownloadmanager.shared.pages.adddownload.AddDownloadCredentialsInUiProps
 import com.abdownloadmanager.shared.pages.adddownload.ImportOptions
 import ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials
@@ -154,6 +155,9 @@ object Ui : KoinComponent {
                 PerHostSettingsWindow(appComponent)
                 DownloadErrorDialog(appComponent)
                 MiniSpeedWindow(appComponent)
+                DownloadDescriptionWindow { id ->
+                    appComponent.downloadSystem.downloadMonitor.downloadListFlow.value.find { it.id == id }?.name
+                }
                 // IDM "Grabber": the files it finds go to the normal add-download dialog
                 SiteGrabberWindow { links, referer, user, pass ->
                     appComponent.openAddDownloadDialog(

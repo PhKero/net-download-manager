@@ -1,6 +1,7 @@
 package com.abdownloadmanager.desktop.cli.download.add.shared
 
 import com.abdownloadmanager.desktop.utils.singleInstance.SingleInstanceManager
+import com.abdownloadmanager.integration.model.AddDownloadsFromIntegration
 import com.abdownloadmanager.integration.model.IDownloadCredentialsFromIntegration
 import com.abdownloadmanager.integration.model.NewDownloadTask
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
@@ -37,7 +38,18 @@ abstract class BaseNewDownload(
         "--queue",
     ).long()
 
+    val ask by option(
+        "--ask",
+        help = "open the Download File Info dialog instead of adding it silently"
+    ).flag()
+
     override suspend fun run() {
+        if (ask) {
+            SingleInstanceManager.get().awokenAppIPCService().getService().useService {
+                it.addDownloadByGui(AddDownloadsFromIntegration(listOf(createDownload())))
+            }
+            return
+        }
         val id = SingleInstanceManager.get().awokenAppIPCService().getService().useService {
             it.addDownload(
                 NewDownloadTask(
@@ -67,5 +79,6 @@ abstract class BaseNewDownload(
 
     fun ParameterHolder.linkOption() = option("--link")
         .required()
-        .validate { HttpUrlUtils.isValidUrl(it) }
+        // also FTP / SFTP, magnet and .torrent links (they go to the aria2 downloader)
+        .validate { HttpUrlUtils.isValidUrl(it) || ir.amirab.downloader.downloaditem.torrent.TorrentLinks.isTorrent(it) }
 }

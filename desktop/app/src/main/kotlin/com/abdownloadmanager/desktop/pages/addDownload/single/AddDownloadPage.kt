@@ -1,6 +1,13 @@
 package com.abdownloadmanager.desktop.pages.addDownload.single
 
 import ir.amirab.util.compose.trs
+import ir.amirab.util.compose.tr
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.abdownloadmanager.desktop.extras.ZipPreview
+import com.abdownloadmanager.desktop.extras.ZipPreviewWindow
+import ir.amirab.downloader.downloaditem.http.IHttpBasedDownloadCredentials
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -462,6 +469,29 @@ fun ConfigActionsButtons(component: BaseAddSingleDownloadComponent) {
             requiresAttention = responseResult?.getOrNull()?.requireBasicAuth ?: false
         ) {
             component.showMoreSettings = true
+        }
+        // IDM "Preview": see what is inside a ZIP before downloading it
+        val name by component.name.collectAsState()
+        if (ZipPreview.isZip(name)) {
+            val credentials by component.credentials.collectAsState()
+            var showZipPreview by remember { mutableStateOf(false) }
+            Spacer(Modifier.width(8.dp))
+            IconActionButton(MyIcons.search, tr("Preview the ZIP contents", "اعرض محتويات الـ ZIP")) {
+                showZipPreview = true
+            }
+            if (showZipPreview) {
+                val http = credentials as? IHttpBasedDownloadCredentials
+                val headers = buildMap {
+                    http?.headers?.let { putAll(it) }
+                    http?.userAgent?.let { put("User-Agent", it) }
+                    if (http?.username != null) {
+                        val token = java.util.Base64.getEncoder()
+                            .encodeToString("${http.username}:${http.password.orEmpty()}".toByteArray())
+                        put("Authorization", "Basic $token")
+                    }
+                }
+                ZipPreviewWindow(credentials.link, headers, onClose = { showZipPreview = false })
+            }
         }
         Spacer(Modifier.width(6.dp))
         component.lastError.collectAsState().value?.let { downloadErrorReason ->

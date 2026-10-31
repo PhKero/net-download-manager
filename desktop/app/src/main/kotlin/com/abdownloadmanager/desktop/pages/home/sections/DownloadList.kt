@@ -7,6 +7,7 @@ import com.abdownloadmanager.shared.ui.widget.CheckBox
 import com.abdownloadmanager.shared.ui.widget.Text
 import com.abdownloadmanager.shared.util.ui.theme.myTextSizes
 import ir.amirab.downloader.queue.QueueManager
+import com.abdownloadmanager.desktop.extras.DownloadDescriptions
 import ir.amirab.util.compose.tr
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
@@ -139,6 +140,7 @@ fun DownloadList(
                 buildMap { models.forEach { m -> m.queueItems.forEach { put(it, m.name) } } }
             }
         }.collectAsState(emptyMap<Long, String>())
+        val descriptions by DownloadDescriptions.all.collectAsState()
         Table(
             tableState = tableState,
             listState = lazyListState,
@@ -357,7 +359,8 @@ fun DownloadList(
                 }
 
                 DownloadListCells.Description -> {
-                    SimpleTextCell(item.downloadLink)
+                    // the user's own description (right-click > Description...), else the link
+                    SimpleTextCell(descriptions[item.id] ?: item.downloadLink)
                 }
             }
         }

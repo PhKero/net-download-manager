@@ -14,6 +14,8 @@ import ir.amirab.util.compose.action.MenuItem
 import ir.amirab.util.compose.action.buildMenu
 import ir.amirab.util.compose.action.simpleAction
 import ir.amirab.util.compose.asStringSource
+import ir.amirab.util.compose.tr
+import com.abdownloadmanager.desktop.extras.DownloadDescriptions
 import ir.amirab.util.osfileutil.FileUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +60,18 @@ class DesktopDownloadActions(
         }
     )
 
+    // IDM: a description of your own for each download (shown in the Description column)
+    val descriptionAction = simpleAction(
+        title = tr("Description...", "الوصف..."),
+        icon = MyIcons.edit,
+        onActionPerformed = {
+            scope.launch {
+                val d = defaultItem.value ?: return@launch
+                DownloadDescriptions.editing.value = d.id
+            }
+        }
+    )
+
     val menu: List<MenuItem> = buildMenu {
         +openFileAction
         if (FileUtils.isOpenFileWithSupported) {
@@ -79,6 +93,7 @@ class DesktopDownloadActions(
             +(copyDownloadCredentialsAsCurlAction)
         }
         +editDownloadAction
+        +descriptionAction
         +fileChecksumAction
         +(openDownloadDialogAction)
     }

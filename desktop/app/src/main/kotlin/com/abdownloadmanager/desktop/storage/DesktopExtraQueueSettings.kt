@@ -11,6 +11,8 @@ data class DesktopExtraQueueSettings(
     override val id: Long,
     val powerActionTypeOnFinish: PowerActionConfig.Type? = null,
     val powerActionUseForceOnFinish: Boolean = false,
+    // IDM: "open the following file when done" (a program, a .bat, any file); empty = nothing
+    val openFileOnFinish: String = "",
 ) : IExtraQueueSettings, ContainsPowerActionConfigOnFinish {
 
     override fun getPowerActionConfigOnFinish() = powerActionTypeOnFinish?.let {

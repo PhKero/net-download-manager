@@ -21,6 +21,7 @@ import ir.amirab.downloader.queue.DownloadQueue
 import ir.amirab.downloader.queue.QueueManager
 import ir.amirab.util.compose.asStringSource
 import ir.amirab.util.compose.asStringSourceWithARgs
+import ir.amirab.util.compose.tr
 import ir.amirab.util.desktop.poweraction.PowerActionConfig
 import ir.amirab.util.flow.combineStateFlows
 import ir.amirab.util.flow.createMutableStateFlowFromFlow
@@ -240,7 +241,21 @@ class QueueInfoComponent(
                             if (it) Res.string.enabled.asStringSource()
                             else Res.string.disabled.asStringSource()
                         },
-                    )
+                    ),
+                    // IDM: open a file / run a program when the queue is done
+                    StringConfigurable(
+                        tr("Open this file when done", "افتح الملف ده لما الطابور يخلص"),
+                        tr("A program, a .bat file or any file to open when every download in this queue has finished. Leave it empty for nothing.", "برنامج أو ملف .bat أو أي ملف يتفتح لما كل تحميلات الطابور تخلص. سيبه فاضي لو مش عايز حاجة."),
+                        backedBy = extraDownloadItemSettingsFlow.mapTwoWayStateFlow(
+                            map = { it.openFileOnFinish },
+                            unMap = { copy(openFileOnFinish = it.trim()) },
+                        ),
+                        validate = { it.isBlank() || java.io.File(it.trim().trim('"')).exists() },
+                        describe = {
+                            if (it.isBlank()) Res.string.disabled.asStringSource()
+                            else it.asStringSource()
+                        },
+                    ),
                 ),
             ),
             ConfigurableGroup(

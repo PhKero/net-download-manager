@@ -10,8 +10,16 @@ import kotlinx.serialization.Serializable
 import java.io.File
 import java.net.URLDecoder
 
-/** magnet links, http(s) links to .torrent files, or a .torrent file on disk */
+/**
+ * magnet links, http(s) links to .torrent files, a .torrent file on disk,
+ * and FTP / SFTP links (IDM downloads FTP too; aria2 handles all of these)
+ */
 object TorrentLinks {
+    fun isFtp(link: String): Boolean {
+        val l = link.trim().lowercase()
+        return l.startsWith("ftp://") || l.startsWith("sftp://")
+    }
+
     fun isMagnet(link: String) = link.trim().startsWith("magnet:?", ignoreCase = true)
 
     fun isTorrentFileLink(link: String): Boolean {
@@ -22,7 +30,7 @@ object TorrentLinks {
 
     fun isLocalTorrentFile(link: String) = link.lowercase().endsWith(".torrent") && File(link).isFile
 
-    fun isTorrent(link: String) = isMagnet(link) || isTorrentFileLink(link) || isLocalTorrentFile(link)
+    fun isTorrent(link: String) = isMagnet(link) || isTorrentFileLink(link) || isLocalTorrentFile(link) || isFtp(link)
 
     /** display name from a magnet's dn= or from the .torrent file name */
     fun suggestedName(link: String): String? {
@@ -32,6 +40,11 @@ object TorrentLinks {
                 ?.removePrefix("dn=")
                 ?.let { runCatching { URLDecoder.decode(it, Charsets.UTF_8) }.getOrDefault(it) }
                 ?.takeIf { it.isNotBlank() }
+        }
+        if (isFtp(link)) {
+            return link.substringBefore('?').substringAfterLast('/')
+                .let { runCatching { URLDecoder.decode(it, Charsets.UTF_8) }.getOrDefault(it) }
+                .takeIf { it.isNotBlank() }
         }
         return link.substringBefore('?').substringAfterLast('/').substringAfterLast('\\')
             .removeSuffix(".torrent").takeIf { it.isNotBlank() }
@@ -52,7 +65,7 @@ data class TorrentDownloadCredentials(
     }
 
     override fun validateCredentials() {
-        require(TorrentLinks.isTorrent(link)) { "not a magnet link or .torrent file" }
+        require(TorrentLinks.isTorrent(link)) { "not a magnet link, .torrent file or FTP link" }
     }
 }
 
@@ -118,7 +131,7 @@ data class TorrentDownloadItem(
     override fun validateItem() = validateCredentials()
 
     override fun validateCredentials() {
-        require(TorrentLinks.isTorrent(link)) { "not a magnet link or .torrent file" }
+        require(TorrentLinks.isTorrent(link)) { "not a magnet link, .torrent file or FTP link" }
     }
 
     override fun withCredentials(credentials: IDownloadCredentials): TorrentDownloadItem {

@@ -40,6 +40,8 @@ private data class ExtrasSettingsModel(
     val autoResume: Boolean = true,
     val appUpdateWeeklyCheck: Boolean = true,
     val appUpdateLastCheck: Long = 0,
+    // toolbar buttons in order, comma separated keys; empty = the default IDM set
+    val toolbarButtons: String = "",
 )
 
 /**
@@ -74,6 +76,7 @@ class ExtrasSettings(scope: CoroutineScope) {
     val autoResume = MutableStateFlow(initial.autoResume)
     val appUpdateWeeklyCheck = MutableStateFlow(initial.appUpdateWeeklyCheck)
     val appUpdateLastCheck = MutableStateFlow(initial.appUpdateLastCheck)
+    val toolbarButtons = MutableStateFlow(initial.toolbarButtons)
 
     init {
         downloadSubtitles.onEach { YtDlpOptions.downloadSubtitles = it }.launchIn(scope)
@@ -93,7 +96,7 @@ class ExtrasSettings(scope: CoroutineScope) {
             markOfTheWeb, subtitlesAsFile,
             speedScheduleEnabled, speedScheduleFrom, speedScheduleTo, speedScheduleLimitKb,
             autoExtract, deleteArchiveAfterExtract, miniWindow,
-            autoResume, appUpdateWeeklyCheck, appUpdateLastCheck,
+            autoResume, appUpdateWeeklyCheck, appUpdateLastCheck, toolbarButtons,
         )
             .debounce(300.milliseconds)
             .onEach { save() }
@@ -128,6 +131,7 @@ class ExtrasSettings(scope: CoroutineScope) {
                         autoResume = autoResume.value,
                         appUpdateWeeklyCheck = appUpdateWeeklyCheck.value,
                         appUpdateLastCheck = appUpdateLastCheck.value,
+                        toolbarButtons = toolbarButtons.value,
                     )
                 )
             )

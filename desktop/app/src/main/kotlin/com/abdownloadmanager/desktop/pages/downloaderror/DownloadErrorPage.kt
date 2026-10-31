@@ -36,26 +36,45 @@ import com.abdownloadmanager.shared.util.ui.theme.mySpacings
 import com.abdownloadmanager.shared.util.ui.theme.myTextSizes
 import com.abdownloadmanager.shared.util.ui.widget.MyIcon
 import ir.amirab.util.compose.resources.myStringResource
+import ir.amirab.util.compose.tr
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import ir.amirab.util.desktop.screen.applyUiScale
 
 @Composable
 fun DownloadErrorDialog(
     appComponent: AppComponent
 ) {
+    val scope = rememberCoroutineScope()
     appComponent.downloadErrorDialogSlot.rememberChild()?.let {
-        DownloadErrorDialog(it)
+        val id = it.downloadItem.id
+        DownloadErrorDialog(
+            it,
+            // IDM style: fix it from the message itself
+            onRefreshLink = {
+                appComponent.openEditDownloadDialog(id)
+                it.onClose()
+            },
+            onTryAgain = {
+                scope.launch { appComponent.downloadSystem.userManualResume(id) }
+                it.onClose()
+            },
+        )
     }
 }
 
 @Composable
 private fun DownloadErrorDialog(
-    downloadErrorComponent: DownloadErrorComponent
+    downloadErrorComponent: DownloadErrorComponent,
+    onRefreshLink: () -> Unit,
+    onTryAgain: () -> Unit,
 ) {
     CustomWindow(
         state = rememberWindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(
-                    size = DpSize(400.dp, 300.dp)
+                    // wider than before: four buttons now (Copy, Refresh link, Try again, OK)
+                    size = DpSize(500.dp, 300.dp)
                         .applyUiScale(LocalUiScale.current),
                 ),
                 positionProvider = WindowPositionProvider.CenteredOnScreen
@@ -71,7 +90,9 @@ private fun DownloadErrorDialog(
             downloadErrorComponent.downloadItem.link,
             downloadErrorComponent.reason,
             onClose = downloadErrorComponent.onClose,
-            onRequestCopyToClipboard = downloadErrorComponent::onRequestCopyToClipboard
+            onRequestCopyToClipboard = downloadErrorComponent::onRequestCopyToClipboard,
+            onRefreshLink = onRefreshLink,
+            onTryAgain = onTryAgain,
         )
     }
 }
@@ -82,6 +103,8 @@ private fun DownloadErrorDialog(
     errorReason: DownloadErrorReason,
     onClose: () -> Unit,
     onRequestCopyToClipboard: () -> Unit,
+    onRefreshLink: () -> Unit,
+    onTryAgain: () -> Unit,
 ) {
     DialogUi(
         mainContent = {
@@ -152,6 +175,17 @@ private fun DownloadErrorDialog(
                     ActionButton(
                         text = myStringResource(Res.string.copy),
                         onClick = onRequestCopyToClipboard,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    // an expired or changed link: paste a new one, or update it from the download page
+                    ActionButton(
+                        text = tr("Refresh link", "تحديث اللينك").rememberString(),
+                        onClick = onRefreshLink,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    ActionButton(
+                        text = tr("Try again", "جرّب تاني").rememberString(),
+                        onClick = onTryAgain,
                     )
                     Spacer(Modifier.width(8.dp))
                     ActionButton(

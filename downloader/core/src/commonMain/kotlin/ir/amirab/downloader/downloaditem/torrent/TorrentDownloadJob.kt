@@ -45,8 +45,29 @@ class TorrentDownloadDestination(outputFolder: File) : DownloadDestination(outpu
     }
 }
 
+/** an FTP / SFTP download is one file: `folder/name` (aria2 keeps `name.aria2` beside it to resume) */
+class FtpDownloadDestination(outputFile: File) : DownloadDestination(outputFile) {
+    override fun getWriterFor(part: DownloadPart): DestWriter = throw UnsupportedOperationException("aria2 writes its own files")
+    override fun canGetFileWriter() = false
+    override suspend fun prepareFile(onProgressUpdate: (Int?) -> Unit) {
+        outputFile.parentFile?.mkdirs()
+    }
+
+    override suspend fun isDownloadedPartsIsValid() = true
+    override fun flush() {}
+
+    override fun cleanUpJunkFiles() {
+        File(outputFile.path + ".aria2").delete()
+    }
+
+    override fun deleteOutputFile() {
+        outputFile.delete()
+        File(outputFile.path + ".aria2").delete()
+    }
+}
+
 /**
- * Runs aria2c for a magnet link / .torrent. Pausing kills it; aria2's .aria2 control files make
+ * Runs aria2c for a magnet link / .torrent (and for FTP / SFTP links). Pausing kills it; aria2's .aria2 control files make
  * the next start continue where it stopped. Seeding stops as soon as the download completes.
  */
 class TorrentDownloadJob(
@@ -54,7 +75,8 @@ class TorrentDownloadJob(
     downloadManager: DownloadManager,
 ) : DownloadJob(downloadManager) {
     private val listDb by downloadManager::dlListDb
-    private lateinit var destination: TorrentDownloadDestination
+    private lateinit var destination: DownloadDestination
+    private val isFtp get() = TorrentLinks.isFtp(downloadItem.link)
     override fun getDestination(): DownloadDestination = destination
 
     private val downloaded = AtomicLong(0)
@@ -72,7 +94,8 @@ class TorrentDownloadJob(
     }
 
     override fun initializeDestination() {
-        destination = TorrentDownloadDestination(downloadManager.calculateOutputFile(downloadItem))
+        val output = downloadManager.calculateOutputFile(downloadItem)
+        destination = if (isFtp) FtpDownloadDestination(output) else TorrentDownloadDestination(output)
     }
 
     override fun getDownloadedSize(): Long = downloaded.get()
@@ -102,7 +125,31 @@ class TorrentDownloadJob(
             ?: throw IllegalStateException("aria2c was not found, it is needed for torrents")
     }
 
-    private fun buildArgs(): List<String> = buildList {
+    private fun buildArgs(): List<String> = if (isFtp) buildFtpArgs() else buildTorrentArgs()
+
+    /** FTP: one file, split over several connections like an HTTP download */
+    private fun buildFtpArgs(): List<String> = buildList {
+        val file = destination.outputFile
+        val connections = (downloadItem.preferredConnectionCount ?: downloadManager.settings.defaultThreadCount).coerceIn(1, 16)
+        add(aria2().absolutePath)
+        add("--dir=${file.parentFile.absolutePath}")
+        add("--out=${file.name}")
+        add("--continue=true")
+        add("--allow-overwrite=false")
+        add("--auto-file-renaming=false")
+        add("--max-connection-per-server=$connections")
+        add("--split=$connections")
+        add("--min-split-size=1M")
+        add("--file-allocation=none")
+        add("--summary-interval=1")
+        add("--console-log-level=error")
+        add("--enable-color=false")
+        val limit = listOf(downloadItem.speedLimit, downloadManager.settings.globalSpeedLimit).filter { it > 0 }.minOrNull()
+        limit?.let { add("--max-overall-download-limit=$it") }
+        add(downloadItem.link)
+    }
+
+    private fun buildTorrentArgs(): List<String> = buildList {
         add(aria2().absolutePath)
         add("--dir=${destination.outputFile.absolutePath}")
         add("--continue=true")
@@ -148,6 +195,7 @@ class TorrentDownloadJob(
     }
 
     private fun folderSize(): Long {
+        if (isFtp) return destination.outputFile.length()
         return destination.outputFile.walkTopDown().filter { it.isFile && !it.name.endsWith(".aria2") && !it.name.endsWith(".torrent") }
             .sumOf { it.length() }
     }

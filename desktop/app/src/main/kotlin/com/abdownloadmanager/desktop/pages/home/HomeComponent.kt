@@ -40,6 +40,7 @@ import com.arkivanov.decompose.ComponentContext
 import ir.amirab.downloader.monitor.*
 import ir.amirab.downloader.queue.QueueManager
 import ir.amirab.util.flow.combineStateFlows
+import ir.amirab.util.flow.mapStateFlow
 import ir.amirab.util.flow.mapTwoWayStateFlow
 import ir.amirab.downloader.downloaditem.IDownloadCredentials
 import ir.amirab.util.AppVersionTracker
@@ -447,19 +448,37 @@ class HomeComponent(
     }
     val showLabels = appSettings.showIconLabels
     // IDM toolbar: Add URL, Resume, Stop, Stop All, Delete, Delete Completed, Options, Scheduler, Start Queue, Stop Queue, Grabber, Tell a Friend
-    val headerActions = buildMenu {
-        +newDownloadAction
-        +downloadActions.resumeAction
-        +downloadActions.pauseAction
-        +stopAllAction
-        +downloadActions.deleteAction
-        +deleteCompletedAction
-        +gotoSettingsAction
-        +openQueuesAction
-        +startQueueGroupAction
-        +stopQueueGroupAction
-        +grabberAction
-        +tellAFriendAction
+    // every button has a stable key so the user's own order (right-click the toolbar > Customize) can be saved
+    val toolbarCatalog: List<Pair<String, MenuItem>> = listOf<Pair<String, MenuItem>>(
+        "add" to newDownloadAction,
+        "resume" to downloadActions.resumeAction,
+        "stop" to downloadActions.pauseAction,
+        "stopAll" to stopAllAction,
+        "delete" to downloadActions.deleteAction,
+        "deleteCompleted" to deleteCompletedAction,
+        "options" to gotoSettingsAction,
+        "scheduler" to openQueuesAction,
+        "startQueue" to startQueueGroupAction,
+        "stopQueue" to stopQueueGroupAction,
+        "grabber" to grabberAction,
+        "tellAFriend" to tellAFriendAction,
+    )
+    private val extrasSettings: com.abdownloadmanager.desktop.extras.ExtrasSettings by inject()
+    val toolbarLayout = extrasSettings.toolbarButtons
+
+    /** the keys shown, in order; empty saved value = every button in the default order */
+    fun toolbarKeys(saved: String): List<String> {
+        val known = toolbarCatalog.map { it.first }
+        return saved.split(',').map { it.trim() }.filter { it in known }.ifEmpty { known }
+    }
+
+    fun setToolbarKeys(keys: List<String>) {
+        toolbarLayout.value = if (keys == toolbarCatalog.map { it.first }) "" else keys.joinToString(",")
+    }
+
+    val headerActions: StateFlow<List<MenuItem>> = toolbarLayout.mapStateFlow { saved ->
+        val byKey = toolbarCatalog.toMap()
+        toolbarKeys(saved).mapNotNull { byKey[it] }
     }
 
     companion object {

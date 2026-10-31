@@ -13,6 +13,8 @@ class NewHttpDownload : BaseNewDownload("http") {
             link = link,
             headers = headers.toMap(),
             downloadPage = downloadPage,
+            // shown in the dialog when --ask opens it
+            suggestedName = name,
         )
     }
 }

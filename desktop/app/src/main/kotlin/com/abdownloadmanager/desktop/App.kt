@@ -4,6 +4,7 @@
 package com.abdownloadmanager.desktop
 
 import com.abdownloadmanager.desktop.cli.Cli
+import com.abdownloadmanager.desktop.cli.IdmStyleArgs
 import com.abdownloadmanager.desktop.utils.EntryType
 import com.abdownloadmanager.desktop.utils.EntrypointInitializer
 import com.github.ajalt.clikt.command.main
@@ -23,6 +24,12 @@ class DefaultAppLauncher {
 }
 
 fun main(args: Array<String>) {
+    // a download from the command line (IDM style "/d URL" or our "download add ..."):
+    // hand it to the running app (it is started if needed) instead of opening a second window
+    IdmStyleArgs.toCliArgs(args)?.let { cliArgs ->
+        runBlocking { Cli().main(cliArgs) }
+        return
+    }
     runBlocking {
         EntrypointInitializer.boot(
             entryType = EntryType.GUI,
