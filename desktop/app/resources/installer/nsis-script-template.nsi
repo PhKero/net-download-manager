@@ -282,8 +282,8 @@ SectionEnd
 ; Net Download Manager: offer the browser add-on for every browser found on this PC.
 ; Each ticked browser opens on the add-on page after the install, the user confirms there.
 !define FIREFOX_ADDON_URL "https://addons.mozilla.org/firefox/addon/net-download-manager/"
-!define CHROME_ADDON_URL "https://github.com/PhKero/net-download-manager/releases/latest"
-!define EDGE_ADDON_URL "https://github.com/PhKero/net-download-manager/releases/latest"
+!define CHROME_ADDON_URL "https://github.com/PhKero/net-download-manager-extension#install-on-chrome"
+!define EDGE_ADDON_URL "https://microsoftedge.microsoft.com/addons/detail/lccdhoiokomnkflbefggcbofjimmnlah"
 
 !macro findBrowser exeName outVar
     ReadRegStr ${outVar} HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\${exeName}" ""

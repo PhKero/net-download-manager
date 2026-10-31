@@ -143,7 +143,14 @@ buildConfig {
     buildConfigField(
         "INTEGRATION_CHROME_LINK",
         provider {
-            "https://github.com/PhKero/net-download-manager/releases/latest"
+            // not in the Chrome Web Store: the GitHub page explains the one-time "Load unpacked" steps
+            "https://github.com/PhKero/net-download-manager-extension#install-on-chrome"
+        }
+    )
+    buildConfigField(
+        "INTEGRATION_EDGE_LINK",
+        provider {
+            "https://microsoftedge.microsoft.com/addons/detail/lccdhoiokomnkflbefggcbofjimmnlah"
         }
     )
     buildConfigField(

@@ -23,11 +23,10 @@ object SharedConstants : BaseConstants {
         BrowserIntegrationModel(
             BrowserType.Chrome, BuildConfig.INTEGRATION_CHROME_LINK
         ),
+        // each browser opens its own add-on page: Firefox and Edge stores, Chrome the GitHub steps
+        // (Opera removed from the menu on the user's request)
         BrowserIntegrationModel(
-            BrowserType.Edge, BuildConfig.INTEGRATION_CHROME_LINK
-        ),
-        BrowserIntegrationModel(
-            BrowserType.Opera, BuildConfig.INTEGRATION_CHROME_LINK
+            BrowserType.Edge, BuildConfig.INTEGRATION_EDGE_LINK
         ),
     )
     override val telegramChannelUrl: String = BuildConfig.TELEGRAM_CHANNEL
