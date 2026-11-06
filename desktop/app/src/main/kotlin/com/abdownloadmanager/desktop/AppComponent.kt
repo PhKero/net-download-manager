@@ -677,14 +677,18 @@ class AppComponent(
             .launchIn(scope)
         // IDM grabber scheduler: saved projects that run every N hours add their new files silently
         com.abdownloadmanager.desktop.extras.GrabberScheduler.start(scope) { project, links, referer ->
-            openAddDownloadDialog(
-                links.map {
-                    AddDownloadCredentialsInUiProps(
-                        credentials = ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials(link = it, downloadPage = referer)
-                    )
-                },
-                ImportOptions(silentImport = com.abdownloadmanager.shared.pages.adddownload.SilentImportOptions(silentDownload = true)),
-            )
+            // one by one: the silent (no window) add only exists for a single link;
+            // several links at once would open the multi-download window instead
+            links.forEach { link ->
+                openAddDownloadDialog(
+                    listOf(
+                        AddDownloadCredentialsInUiProps(
+                            credentials = ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials(link = link, downloadPage = referer)
+                        )
+                    ),
+                    ImportOptions(silentImport = com.abdownloadmanager.shared.pages.adddownload.SilentImportOptions(silentDownload = true)),
+                )
+            }
             sendNotification(
                 tag = "grabber-$project",
                 title = tr("Grabber: $project", "جامع الملفات: $project").let { it },
