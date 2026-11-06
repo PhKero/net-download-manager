@@ -1,5 +1,8 @@
 package com.abdownloadmanager.shared.pages.adddownload.single
 
+import com.abdownloadmanager.shared.pages.adddownload.AddDownloadPreferences
+import com.abdownloadmanager.shared.pages.adddownload.EarlyStartedDownloads
+import com.arkivanov.essenty.lifecycle.doOnDestroy
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -81,7 +84,7 @@ abstract class BaseAddSingleDownloadComponent(
     private val _shouldShowWindow = MutableStateFlow(importOptions.silentImport == null)
     override val shouldShowWindow: StateFlow<Boolean> = _shouldShowWindow.asStateFlow()
     val downloadInputsComponent = downloaderInUi.createNewDownloadInputs(
-        initialFolder = appRepository.saveLocation.value,
+        initialFolder = AddDownloadPreferences.lastFolder(lastUsedLocations.value) ?: appRepository.saveLocation.value,
         initialName = initialCredentials.extraConfig.getAndFixSuggestedName().orEmpty(),
         downloadSystem = downloadSystem,
         scope = scope,
@@ -120,6 +123,11 @@ abstract class BaseAddSingleDownloadComponent(
     private fun useCategoryFolder(
         useCategory: Boolean,
     ): Boolean {
+        // IDM: the last folder used wins over the category folder
+        AddDownloadPreferences.lastFolder(lastUsedLocations.value)?.let {
+            setFolder(it)
+            return true
+        }
         val category = selectedCategory.value
         if (useCategory && category != null) {
             category.getDownloadPath()?.let {
@@ -131,7 +139,7 @@ abstract class BaseAddSingleDownloadComponent(
     }
 
     private fun useDefaultFolder() {
-        setFolder(appRepository.saveLocation.value)
+        setFolder(AddDownloadPreferences.lastFolder(lastUsedLocations.value) ?: appRepository.saveLocation.value)
     }
 
 
@@ -281,9 +289,95 @@ abstract class BaseAddSingleDownloadComponent(
         downloadChecker.refresh()
     }
 
+    // ---- IDM "start downloading while Download File Info is open" (setting, off by default) ----
+    // the file starts downloading as soon as the link checks out; Start Download keeps it (moving it
+    // to the chosen name / folder), Download Later and Cancel delete it with its partial file
+    private var earlyJob: Job? = null
+    private var earlyId: Long? = null
+    private var earlyLink: String? = null
+
+    // set once Start / Later / Cancel decided what happens to the early download
+    private var earlyHandled = false
+
+    private fun maybeStartEarly() {
+        if (!AddDownloadPreferences.startWhileDialogOpen.value || !shouldShowWindow.value) return
+        if (earlyJob != null || earlyHandled) return
+        val info = checkResponseResult.value?.getOrNull() ?: return
+        // only when it can really continue later: resumable, a real file, nothing in the way
+        if (!info.isSuccessFul || !info.resumeSupport || info.isWebPage || !canAdd.value) return
+        val item = downloadItem.value
+        val extra = downloadJobConfig.value
+        earlyJob = appScope.launch {
+            runCatching {
+                val id = downloadSystem.addDownload(
+                    NewDownloadItemProps(item, extra, OnDuplicateStrategy.AddNumbered, EmptyContext),
+                    queueId = null,
+                    categoryId = null,
+                )
+                EarlyStartedDownloads.add(id)
+                earlyId = id
+                earlyLink = item.link
+                downloadSystem.userManualResume(id)
+            }
+        }
+    }
+
+    private suspend fun discardEarly() {
+        earlyJob?.join()
+        val id = earlyId ?: return
+        earlyId = null
+        runCatching { downloadSystem.removeDownload(id, alsoRemoveFile = true, context = EmptyContext) }
+        EarlyStartedDownloads.remove(id)
+    }
+
+    init {
+        combine(checkResponseResult, canAdd) { _, _ -> maybeStartEarly() }.launchIn(scope)
+        lifecycle.doOnDestroy {
+            // the dialog was closed without Start / Later: the early download goes away
+            if (earlyJob != null && !earlyHandled) {
+                earlyHandled = true
+                appScope.launch { discardEarly() }
+            }
+        }
+    }
+
     fun onRequestDownload() {
         val downloadItem = this@BaseAddSingleDownloadComponent.downloadItem.value
         val downloadJobExtraConfig = downloadJobConfig.value
+        if (earlyJob != null && !earlyHandled) {
+            consumeDialog {
+                earlyHandled = true
+                saveLocationIfNecessary(downloadItem.folder)
+                val categoryId = getCategoryIfUseCategoryIsOn()?.id
+                val strategy = onDuplicateStrategy.value.orDefault()
+                appScope.launch {
+                    earlyJob?.join()
+                    val id = earlyId
+                    if (id == null || earlyLink != downloadItem.link) {
+                        // the early start failed or the link was changed: the normal way
+                        discardEarly()
+                        onRequestDownload(
+                            item = NewDownloadItemProps(downloadItem, downloadJobExtraConfig, strategy, EmptyContext),
+                            categoryId = categoryId,
+                        )
+                    } else {
+                        // keep what is downloaded: give it the name / folder chosen in the dialog
+                        downloadSystem.editDownload(
+                            id,
+                            {
+                                it.name = downloadItem.name
+                                it.folder = downloadItem.folder
+                            },
+                            downloadJobExtraConfig,
+                        )
+                        categoryId?.let { categoryManager.addItemsToCategory(it, listOf(id)) }
+                        EarlyStartedDownloads.confirm(id)
+                    }
+                }
+                onRequestClose()
+            }
+            return
+        }
         consumeDialog {
             saveLocationIfNecessary(downloadItem.folder)
             onRequestDownload(
@@ -310,18 +404,10 @@ abstract class BaseAddSingleDownloadComponent(
         val category = getCategoryIfUseCategoryIsOn()
         if (rememberFolderAsDefault.value && isFolderChangedResult.value.isChanged) {
             persistFolder(folder, category)
-        } else {
-            val shouldAdd = if (category == null) {
-                // always add if user don't use category
-                true
-            } else {
-                // only add if category path is not the same as provided path
-                category.getDownloadPath() != folder
-            }
-            if (shouldAdd) {
-                addToLastUsedLocations(folder)
-            }
         }
+        // always first in the list: it is the folder the next download opens in
+        // (when "remember the last folder" is on); before, a category's own folder was left out
+        addToLastUsedLocations(folder)
     }
 
 
@@ -331,6 +417,29 @@ abstract class BaseAddSingleDownloadComponent(
     ) {
         val downloadItem = downloadItem.value
         val downloadJobConfig = downloadJobConfig.value
+        if (earlyJob != null && !earlyHandled) {
+            // "Download Later": the early download is removed first, then it is added the normal way
+            consumeDialog {
+                earlyHandled = true
+                saveLocationIfNecessary(downloadItem.folder)
+                val categoryId = getCategoryIfUseCategoryIsOn()?.id
+                val strategy = onDuplicateStrategy.value.orDefault()
+                appScope.launch {
+                    discardEarly()
+                    onRequestAddToQueue(
+                        item = NewDownloadItemProps(downloadItem, downloadJobConfig, strategy, EmptyContext),
+                        queueId = queueId,
+                        categoryId = categoryId,
+                    ).invokeOnCompletion {
+                        if (queueId != null && startQueue) {
+                            GlobalScope.launch { downloadSystem.startQueue(queueId) }
+                        }
+                    }
+                }
+                onRequestClose()
+            }
+            return
+        }
         consumeDialog {
             saveLocationIfNecessary(downloadItem.folder)
             onRequestAddToQueue(

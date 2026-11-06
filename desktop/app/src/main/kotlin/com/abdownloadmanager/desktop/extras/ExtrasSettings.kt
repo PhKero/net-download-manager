@@ -46,6 +46,10 @@ private data class ExtrasSettingsModel(
     // IDM "start view" of the download window: normal / minimized
     val progressWindowMinimized: Boolean = false,
     val dropTarget: Boolean = false,
+    // IDM: a new download opens in the folder of the last one
+    val rememberLastFolder: Boolean = true,
+    // IDM: the file starts downloading while Download File Info is still open
+    val startWhileDialogOpen: Boolean = false,
 )
 
 /**
@@ -87,8 +91,12 @@ class ExtrasSettings(scope: CoroutineScope) {
     val ignoreFileChangesOnResume = MutableStateFlow(initial.ignoreFileChangesOnResume)
     val progressWindowMinimized = MutableStateFlow(initial.progressWindowMinimized)
     val dropTarget = MutableStateFlow(initial.dropTarget)
+    val rememberLastFolder = MutableStateFlow(initial.rememberLastFolder)
+    val startWhileDialogOpen = MutableStateFlow(initial.startWhileDialogOpen)
 
     init {
+        rememberLastFolder.onEach { com.abdownloadmanager.shared.pages.adddownload.AddDownloadPreferences.rememberLastFolder.value = it }.launchIn(scope)
+        startWhileDialogOpen.onEach { com.abdownloadmanager.shared.pages.adddownload.AddDownloadPreferences.startWhileDialogOpen.value = it }.launchIn(scope)
         downloadSubtitles.onEach { YtDlpOptions.downloadSubtitles = it }.launchIn(scope)
         subtitlesAsFile.onEach { YtDlpOptions.subtitlesAsFile = it }.launchIn(scope)
         subtitleLanguages.onEach { langs ->
@@ -107,7 +115,7 @@ class ExtrasSettings(scope: CoroutineScope) {
             speedScheduleEnabled, speedScheduleFrom, speedScheduleTo, speedScheduleLimitKb,
             autoExtract, deleteArchiveAfterExtract, miniWindow,
             autoResume, appUpdateWeeklyCheck, appUpdateLastCheck, toolbarButtons,
-            ignoreFileChangesOnResume, progressWindowMinimized, dropTarget,
+            ignoreFileChangesOnResume, progressWindowMinimized, dropTarget, rememberLastFolder, startWhileDialogOpen,
         )
             .debounce(300.milliseconds)
             .onEach { save() }
@@ -146,6 +154,8 @@ class ExtrasSettings(scope: CoroutineScope) {
                         ignoreFileChangesOnResume = ignoreFileChangesOnResume.value,
                         progressWindowMinimized = progressWindowMinimized.value,
                         dropTarget = dropTarget.value,
+                        rememberLastFolder = rememberLastFolder.value,
+                        startWhileDialogOpen = startWhileDialogOpen.value,
                     )
                 )
             )

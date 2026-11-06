@@ -65,6 +65,8 @@ class NewDownloadChecker<
         val duplicateFilterByPath = DuplicateFilterByPath(file)
         val items = downloadSystem
             .getDownloadItemsBy(duplicateFilterByPath::isDuplicate)
+            // a download this dialog already started early is not a duplicate of itself
+            .filter { !com.abdownloadmanager.shared.pages.adddownload.EarlyStartedDownloads.isEarly(it.id) }
 
 //        val fileExists = File(folder, name).exists()
 

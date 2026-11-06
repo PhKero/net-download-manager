@@ -141,6 +141,13 @@ class DesktopSettingsComponent(
                     ),
                     ConfigurableGroup(
                         nestedConfigurable = listOf(
+                            // IDM: save time, the file downloads while you pick the folder and name
+                            BooleanConfigurable(
+                                title = tr("Start downloading while Download File Info is open", "ابدأ التحميل وشباك \"Download File Info\" لسه مفتوح"),
+                                description = tr("The file already downloads while you choose the folder and name. Start Download keeps it; Download Later and Cancel delete it.", "الملف بيبدأ يتحمل وانت بتختار الفولدر والاسم. \"Start Download\" بيكمله، و\"Download Later\" أو \"Cancel\" بيمسحوه."),
+                                backedBy = extrasSettings.startWhileDialogOpen,
+                                describe = { (if (it) Res.string.enabled else Res.string.disabled).asStringSource() },
+                            ),
                             CommonSettings.autoShowDownloadProgressWindow(appSettings),
                             // IDM "start view" of the download window
                             BooleanConfigurable(
@@ -328,6 +335,13 @@ class DesktopSettingsComponent(
                     ConfigurableGroup(
                         nestedConfigurable = listOf(
                             CommonSettings.defaultDownloadFolderConfig(appSettings),
+                            // IDM: open the next download in the last folder used
+                            BooleanConfigurable(
+                                title = tr("Remember the last folder", "افتكر آخر فولدر"),
+                                description = tr("A new download opens in the folder you saved the last one to, instead of the category or default folder", "التحميل الجديد بيفتح في الفولدر اللي حفظت فيه آخر تحميل، بدل فولدر الفئة أو الفولدر الأساسي"),
+                                backedBy = extrasSettings.rememberLastFolder,
+                                describe = { (if (it) Res.string.enabled else Res.string.disabled).asStringSource() },
+                            ),
                             CommonSettings.useCategoryByDefault(appSettings),
                         )
                     ),

@@ -1,5 +1,6 @@
 package com.abdownloadmanager.shared.pages.adddownload.multiple
 
+import com.abdownloadmanager.shared.pages.adddownload.AddDownloadPreferences
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -78,7 +79,8 @@ abstract class BaseAddMultiDownloadComponent(
 ) {
     override val shouldShowWindow: StateFlow<Boolean> = MutableStateFlow(true)
 
-    private val _folder = MutableStateFlow(appRepository.saveLocation.value)
+    // IDM: start in the last folder used (when "remember the last folder" is on)
+    private val _folder = MutableStateFlow(AddDownloadPreferences.lastFolder(lastUsedLocations.value) ?: appRepository.saveLocation.value)
     val folder = _folder.asStateFlow()
     fun setFolder(folder: String) {
         this._folder.update { folder }
@@ -340,9 +342,9 @@ abstract class BaseAddMultiDownloadComponent(
         if (allInSameLocation.value) {
             if (rememberFolderAsDefault.value && isFolderChangedResult.value.isChanged) {
                 persistFolder(folder, selectedCategory.value)
-            } else {
-                addToLastUsedLocations(folder)
             }
+            // always first in the list: the next download opens there (remember the last folder)
+            addToLastUsedLocations(folder)
         }
     }
 

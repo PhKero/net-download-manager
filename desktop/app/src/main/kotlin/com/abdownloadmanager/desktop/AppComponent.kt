@@ -671,6 +671,27 @@ class AppComponent(
         extrasSettings.ignoreFileChangesOnResume
             .onEach { downloadSystem.downloadManager.settings.ignoreETagChangesOnResume = it }
             .launchIn(scope)
+        // a download started early is confirmed with Start Download: now show its window, as usual
+        com.abdownloadmanager.shared.pages.adddownload.EarlyStartedDownloads.confirmed
+            .onEach { id -> if (appSettings.showDownloadProgressDialog.value) openDownloadDialog(id) }
+            .launchIn(scope)
+        // IDM grabber scheduler: saved projects that run every N hours add their new files silently
+        com.abdownloadmanager.desktop.extras.GrabberScheduler.start(scope) { project, links, referer ->
+            openAddDownloadDialog(
+                links.map {
+                    AddDownloadCredentialsInUiProps(
+                        credentials = ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials(link = it, downloadPage = referer)
+                    )
+                },
+                ImportOptions(silentImport = com.abdownloadmanager.shared.pages.adddownload.SilentImportOptions(silentDownload = true)),
+            )
+            sendNotification(
+                tag = "grabber-$project",
+                title = tr("Grabber: $project", "جامع الملفات: $project").let { it },
+                description = tr("${links.size} new file(s) found, downloading", "لقى ${links.size} ملف جديد، وبيحمّلهم"),
+                type = NotificationType.Info,
+            )
+        }
         com.abdownloadmanager.desktop.extras.SyncedDownloads.start(scope, downloadSystem) { name ->
             sendNotification(
                 tag = "sync-updated",
@@ -821,7 +842,9 @@ class AppComponent(
             }
         }
         if (it is DownloadManagerEvents.OnJobStarting) {
-            if (appSettings.showDownloadProgressDialog.value) {
+            // started early while Download File Info is still open: its window opens on Start Download
+            val startedEarly = com.abdownloadmanager.shared.pages.adddownload.EarlyStartedDownloads.isEarly(it.downloadItem.id)
+            if (appSettings.showDownloadProgressDialog.value && !startedEarly) {
                 // IDM "start view: minimized": the window opens in the taskbar, not over your work
                 val alreadyOpen = openedDownloadDialogs.value.any { d -> d.downloadId == it.downloadItem.id }
                 if (extrasSettings.progressWindowMinimized.value && !alreadyOpen) {

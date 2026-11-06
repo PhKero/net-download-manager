@@ -100,6 +100,10 @@ data class GrabberProject(
     val excludeNames: String = "",
     val minSizeKb: String = "",
     val maxSizeMb: String = "",
+    // IDM grabber scheduler: run again every N hours and download only the files not found before (0 = off)
+    val runEveryHours: Int = 0,
+    val lastRun: Long = 0,
+    val seenUrls: List<String> = emptyList(),
 )
 
 object GrabberProjects {
@@ -110,6 +114,11 @@ object GrabberProjects {
 
     fun save(project: GrabberProject) {
         all.value = all.value.filterNot { it.name.equals(project.name, true) } + project
+        write()
+    }
+
+    fun update(name: String, change: (GrabberProject) -> GrabberProject) {
+        all.value = all.value.map { if (it.name == name) change(it) else it }
         write()
     }
 
@@ -225,6 +234,68 @@ private suspend fun crawl(
     }
 }
 
+/**
+ * Runs the saved projects that have "run every N hours" on their own (sites without a login only:
+ * the password is never saved). Only the files not found in earlier runs are sent to [onNewFiles].
+ */
+object GrabberScheduler {
+    fun start(scope: kotlinx.coroutines.CoroutineScope, onNewFiles: (project: String, links: List<String>, referer: String) -> Unit) {
+        // a background thread: a delay() loop on the Main (UI) dispatcher never woke up here
+        scope.launch(Dispatchers.Default) {
+            while (isActive) {
+                for (p in GrabberProjects.all.value) {
+                    if (p.runEveryHours <= 0 || p.username.isNotBlank()) continue
+                    if (System.currentTimeMillis() - p.lastRun < p.runEveryHours * 3_600_000L) continue
+                    runCatching {
+                        val files = runProject(p)
+                        val fresh = files.map { it.url }.filter { it !in p.seenUrls }
+                        GrabberProjects.update(p.name) {
+                            it.copy(lastRun = System.currentTimeMillis(), seenUrls = (it.seenUrls + fresh).takeLast(20_000))
+                        }
+                        // the first run only records what is there; later runs download what is new
+                        if (fresh.isNotEmpty() && p.lastRun != 0L) onNewFiles(p.name, fresh, p.startPage)
+                    }
+                }
+                kotlinx.coroutines.delay(10 * 60_000L)
+            }
+        }
+    }
+
+    private suspend fun runProject(p: GrabberProject): List<GrabbedFile> {
+        val template = runCatching { GrabTemplate.valueOf(p.template) }.getOrDefault(GrabTemplate.AllFiles)
+        val custom = p.customExtensions.split(',', ' ', ';').map { it.trim().trimStart('.').lowercase() }.filter { it.isNotEmpty() }.toSet()
+        val include = wildcardsToRegex(p.includeNames)
+        val exclude = wildcardsToRegex(p.excludeNames)
+        val minBytes = p.minSizeKb.toLongOrNull()?.times(1024)
+        val maxBytes = p.maxSizeMb.toLongOrNull()?.times(1024 * 1024)
+        val found = ArrayList<GrabbedFile>()
+        crawl(
+            startUrl = p.startPage.trim().let { if (it.startsWith("http")) it else "https://$it" },
+            wanted = { ext ->
+                when (template) {
+                    GrabTemplate.AllFiles -> ext.isNotEmpty() && (ext in knownFileExtensions || ext.length in 2..4)
+                    GrabTemplate.Custom -> ext in custom
+                    else -> ext in template.extensions
+                }
+            },
+            maxDepth = p.depth,
+            maxPages = p.maxPages.toIntOrNull()?.coerceIn(1, 500) ?: 30,
+            sameSiteOnly = p.sameSite,
+            authHeader = null,
+            onPageScanned = { _, _ -> },
+            onFileFound = { f ->
+                if ((include.isEmpty() || include.any { it.matches(f.name) }) && exclude.none { it.matches(f.name) }) found += f
+            },
+        )
+        if (minBytes == null && maxBytes == null) return found
+        val client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(15)).build()
+        return found.filter { f ->
+            val size = headSize(client, f.url, null) ?: return@filter false
+            (minBytes == null || size >= minBytes) && (maxBytes == null || size <= maxBytes)
+        }
+    }
+}
+
 @Composable
 fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, username: String?, password: String?) -> Unit) {
     val isOpen by SiteGrabber.isOpen.collectAsState()
@@ -266,6 +337,7 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
         var excludeNames by remember { mutableStateOf("") }
         var minSizeKb by remember { mutableStateOf("") }
         var maxSizeMb by remember { mutableStateOf("") }
+        var runEveryHours by remember { mutableStateOf("") }
         val savedProjects by GrabberProjects.all.collectAsState()
 
         fun loadProject(p: GrabberProject) {
@@ -282,6 +354,7 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
             excludeNames = p.excludeNames
             minSizeKb = p.minSizeKb
             maxSizeMb = p.maxSizeMb
+            runEveryHours = p.runEveryHours.takeIf { it > 0 }?.toString().orEmpty()
         }
         val found = remember { mutableStateListOf<GrabbedFile>() }
         val unchecked = remember { mutableStateListOf<String>() }
@@ -305,10 +378,15 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                 "Basic " + Base64.getEncoder().encodeToString("$username:$password".toByteArray())
             } else null
             if (projectName.isNotBlank()) {
+                val old = GrabberProjects.all.value.find { it.name.equals(projectName.trim(), true) }
                 GrabberProjects.save(
                     GrabberProject(
                         projectName.trim(), startPage.trim(), username, template.name, customExtensions,
                         depth, maxPages, sameSite, includeNames, excludeNames, minSizeKb, maxSizeMb,
+                        runEveryHours = runEveryHours.toIntOrNull() ?: 0,
+                        // same site: keep what earlier runs found; another site: start over
+                        lastRun = if (old?.startPage == startPage.trim()) old.lastRun else 0,
+                        seenUrls = if (old?.startPage == startPage.trim()) old.seenUrls else emptyList(),
                     )
                 )
             }
@@ -450,6 +528,11 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                             Text(" KB  " + tr("to", "لحد").rememberString() + "  ")
                             MyTextField(maxSizeMb, { v -> maxSizeMb = v.filter { it.isDigit() }.take(7) }, "∞", Modifier.width(80.dp))
                             Text(" MB")
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(tr("Run again every", "شغّله تاني كل").rememberString(), Modifier.width(120.dp))
+                            MyTextField(runEveryHours, { v -> runEveryHours = v.filter { it.isDigit() }.take(4) }, "0", Modifier.width(80.dp))
+                            Text(" " + tr("hours: new files download by themselves (needs a project name, no login)", "ساعة: الملفات الجديدة بتتحمل لوحدها (محتاج اسم مشروع، ومن غير تسجيل دخول)").rememberString(), fontSize = myTextSizes.sm)
                         }
                     }
 
