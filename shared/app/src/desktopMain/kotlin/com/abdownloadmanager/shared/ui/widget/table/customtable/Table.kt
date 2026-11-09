@@ -69,6 +69,8 @@ fun <T, C : TableCell<T>> Table(
     // IDM style: when set, each column divider is ONE straight line from the header down through the rows
     // (the value is the horizontal padding the header / row wrappers put before the first cell)
     gridLinesStartPadding: Dp? = null,
+    // the last column takes the rest of the width, so the table reaches the right edge
+    fillLastColumn: Boolean = false,
     renderHeaderCell: @Composable (C) -> Unit = { DefaultRenderHeader(it) },
     drawOnEmpty: @Composable BoxScope.() -> Unit = {},
     wrapHeader: @Composable TableScope.(rowContent: @Composable () -> Unit) -> Unit = { content -> content() },
@@ -102,6 +104,14 @@ fun <T, C : TableCell<T>> Table(
                     LocalTableGridOverlay provides (gridLinesStartPadding != null),
                 ) {
                     var headerHeightPx by remember { mutableStateOf(0) }
+                    val sidePadding = (gridLinesStartPadding ?: 0.dp) * 2
+                    val widthOf: (C) -> Dp = { cell ->
+                        val own = customWidths[cell] ?: cell.size.defaultWidth
+                        if (fillLastColumn && cell == cells.lastOrNull()) {
+                            val others = cells.dropLast(1).fold(0.dp) { acc, c -> acc + (customWidths[c] ?: c.size.defaultWidth) }
+                            maxOf(own, maxWidth - sidePadding - others)
+                        } else own
+                    }
                     val overlayGridColor = myColors.onBackground / 0.12f
                     var showColumnConfig by remember {
                         mutableStateOf(false)
@@ -122,7 +132,7 @@ fun <T, C : TableCell<T>> Table(
                                     val visibleItems = listState.layoutInfo.visibleItemsInfo
                                     val rowsBottom = visibleItems.lastOrNull()?.let { it.offset + it.size } ?: 0
                                     val bottom = (headerHeightPx + rowsBottom).toFloat().coerceAtMost(size.height)
-                                    val widths = cells.map { (customWidths[it] ?: it.size.defaultWidth).toPx() }
+                                    val widths = cells.map { widthOf(it).toPx() }
                                     val right = start + widths.sum()
                                     // a line under every row
                                     for (item in visibleItems) {
@@ -161,7 +171,7 @@ fun <T, C : TableCell<T>> Table(
                                     }
                                     Row(
                                         Modifier
-                                            .width(customWidths[cell] ?: cell.size.defaultWidth)
+                                            .width(widthOf(cell))
 //                                    .border(width = LocalCellPadding.current.calculateTopPadding(), myColors.primary,)
                                             .padding(LocalCellPadding.current),
                                         verticalAlignment = Alignment.CenterVertically
@@ -222,7 +232,7 @@ fun <T, C : TableCell<T>> Table(
                                     ) {
                                         cells.forEach { cell ->
                                             Box(
-                                                Modifier.width(customWidths[cell] ?: cell.size.defaultWidth)
+                                                Modifier.width(widthOf(cell))
                                                     .fillMaxHeight()
                                                     .ifThen(gridLinesStartPadding == null) {
                                                         drawBehind {
