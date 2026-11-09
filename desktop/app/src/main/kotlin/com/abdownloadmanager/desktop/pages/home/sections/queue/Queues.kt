@@ -92,10 +92,7 @@ internal fun QueuesSection(
     val (isExpanded, setExpanded) = remember { mutableStateOf(true) }
     Column(
         modifier
-            .padding(start = 16.dp)
-            .clip(clipShape)
-            .border(1.dp, myColors.surface, clipShape)
-            .padding(1.dp),
+            .padding(top = 2.dp),
     ) {
         ExpandableItem(
             isExpanded = isExpanded,
@@ -116,8 +113,8 @@ internal fun QueuesSection(
                         )
                 ) {
                     Row(
-                        Modifier.padding(vertical = 4.dp)
-                            .padding(start = 16.dp)
+                        Modifier.padding(vertical = 2.dp)
+                            .padding(start = 8.dp)
                             .padding(end = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -125,14 +122,14 @@ internal fun QueuesSection(
                             MyIcon(
                                 MyIcons.queue,
                                 null,
-                                Modifier.size(mySpacings.iconSize)
+                                Modifier.size(14.dp)
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 myStringResource(Res.string.queues),
                                 Modifier.weight(1f),
                                 fontWeight = FontWeight.Normal,
-                                fontSize = myTextSizes.lg,
+                                fontSize = myTextSizes.base,
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
                             )
@@ -212,7 +209,7 @@ private fun QueueFilterItem(
             )
             .background(
                 if (isSelected) {
-                    myColors.onBackground / 0.05f
+                    myColors.primary / 0.22f
                 } else Color.Transparent
             )
             .ifThen(isDraggingOnMe) {
@@ -252,22 +249,22 @@ private fun QueueFilterItem(
         }
         Row(
             Modifier
-                .padding(start = 24.dp)
-                .padding(horizontal = 4.dp, vertical = 6.dp),
+                .padding(start = 26.dp)
+                .padding(horizontal = 4.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             WithContentAlpha(if (isSelected) 1f else 0.75f) {
                 MyIcon(
                     MyIcons.folder,
                     null,
-                    Modifier.size(mySpacings.iconSize)
+                    Modifier.size(14.dp)
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
                     queueModel.name,
                     Modifier.weight(1f),
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = myTextSizes.lg,
+                    fontSize = myTextSizes.base,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                 )

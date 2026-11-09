@@ -64,8 +64,9 @@ private val desktopSpacings = MySpacings(
     largeSpace = 16.dp,
 )
 
+// classic Windows look (IDM style): nearly square corners
 val desktopShapes = MyShapes(
-    defaultRounded = RoundedCornerShape(6.dp)
+    defaultRounded = RoundedCornerShape(2.dp)
 )
 
 @Composable

@@ -173,45 +173,48 @@ object DefaultThemes {
     )
 
 
-    /** light theme with the blue / white look of classic Windows download managers */
+    /**
+     * light theme with the look of a classic Windows program (IDM style): grey window and toolbar,
+     * white lists, black text, the Windows blue for selection and focus
+     */
     val classicBlue = MyColors(
         id = "classic_blue",
-        name = "Classic Blue",
-        primary = Color(0xFF2A6FD6),
-        primaryVariant = Color(0xFF1F57AD),
+        name = "Classic",
+        primary = Color(0xFF0078D7),
+        primaryVariant = Color(0xFF005A9E),
         onPrimary = Color(0xFFFFFFFF),
         secondary = Color(0xFF2A9D3A),
         secondaryVariant = Color(0xFF1E7A2C),
         onSecondary = Color(0xFFFFFFFF),
         background = Color(0xFFFFFFFF),
-        onBackground = Color(0xFF1D3557),
-        surface = Color(0xFFE4EEFB),
-        onSurface = Color(0xFF1D3557),
+        onBackground = Color(0xFF1A1A1A),
+        surface = Color(0xFFF0F0F0),
+        onSurface = Color(0xFF1A1A1A),
         error = Color(0xFFD93B2B),
         onError = Color(0xFFFFFFFF),
         success = Color(0xFF2A9D3A),
         onSuccess = Color(0xFFFFFFFF),
         warning = Color(0xFFE6A700),
         onWarning = Color(0xFF1D3557),
-        info = Color(0xFF2A6FD6),
+        info = Color(0xFF0078D7),
         onInfo = Color(0xFFFFFFFF),
         isLight = true
     )
 
-    /** dark twin of [classicBlue], used when Windows is in dark mode */
+    /** dark twin of [classicBlue] (Windows dark mode): neutral greys, not blue */
     val classicBlueDark = MyColors(
         id = "classic_blue_dark",
-        name = "Classic Blue Dark",
-        primary = Color(0xFF4A8FEA),
-        primaryVariant = Color(0xFF6CA6F0),
+        name = "Classic Dark",
+        primary = Color(0xFF4CA0E0),
+        primaryVariant = Color(0xFF6CB4EA),
         onPrimary = Color(0xFFFFFFFF),
         secondary = Color(0xFF3BC24F),
         secondaryVariant = Color(0xFF5CD46E),
-        onSecondary = Color(0xFF0E1A2B),
-        background = Color(0xFF15202E),
-        onBackground = Color(0xFFDCE6F4),
-        surface = Color(0xFF1E2D40),
-        onSurface = Color(0xFFDCE6F4),
+        onSecondary = Color(0xFF101010),
+        background = Color(0xFF1E1E1E),
+        onBackground = Color(0xFFE6E6E6),
+        surface = Color(0xFF2B2B2B),
+        onSurface = Color(0xFFE6E6E6),
         error = Color(0xFFF0584A),
         onError = Color(0xFFFFFFFF),
         success = Color(0xFF3BC24F),

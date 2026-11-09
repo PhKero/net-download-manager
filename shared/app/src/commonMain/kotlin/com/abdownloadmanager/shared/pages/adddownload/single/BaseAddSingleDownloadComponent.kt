@@ -522,22 +522,26 @@ abstract class BaseAddSingleDownloadComponent(
 
     fun handleSilentImport(silentImport: SilentImportOptions) {
         scope.launch {
+            // a video page needs yt-dlp to ask the site first (several seconds) before the name is known
+            val isVideo = credentials.value is ir.amirab.downloader.downloaditem.ytdlp.YtDlpDownloadCredentials
+            val waitFor = if (isVideo) 45.seconds else 2.seconds
             try {
-                withTimeout(2.seconds) {
+                withTimeout(waitFor) {
                     // ensure all values are set!
                     credentials.map { it.link }.first { it.isNotEmpty() }
                     folder.first { it.isNotEmpty() }
                     name.first { it.isNotEmpty() }
                 }
             } catch (_: Exception) {
-                onRequestClose()
+                // never drop it silently: let the user finish it in the window
+                _shouldShowWindow.value = true
                 return@launch
             }
             val failAutoAdd = async {
                 try {
                     // although we don't need timeout, but I add this timeout here maybe there is a bug
                     // and I don't want this coroutine to be halted infinitely
-                    withTimeout(10.seconds) {
+                    withTimeout(if (isVideo) 45.seconds else 10.seconds) {
                         canAddToDownloads.first { it }
                         if (silentImport.silentDownload) {
                             onRequestDownload()

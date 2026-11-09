@@ -64,6 +64,7 @@ fun MyTextField(
     minLines: Int = 1,
     start: @Composable (RowScope.() -> Unit)? = null,
     end: @Composable (RowScope.() -> Unit)? = null,
+    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
 ) {
     val focusRequester = remember { FocusRequester() }
     val fm = LocalFocusManager.current
@@ -120,6 +121,7 @@ fun MyTextField(
             onValueChange = onTextChange,
             interactionSource = interactionSource,
             enabled = enabled,
+            visualTransformation = visualTransformation,
             modifier = Modifier
                 .weight(1f)
                 .padding(textPadding)

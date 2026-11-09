@@ -32,8 +32,19 @@ class FontManager(
             id = DEFAULT_FONT_ID,
             uri = "",
             name = Res.string.default.asStringSource(),
-            fontFamily = FontFamily.Default,
+            fontFamily = windowsUiFontOrDefault(),
         )
+
+        // classic Windows look (IDM style): the Windows UI font, which also covers Arabic
+        @OptIn(ExperimentalTextApi::class)
+        private fun windowsUiFontOrDefault(): FontFamily {
+            val onWindows = System.getProperty("os.name").orEmpty().startsWith("Windows")
+            return if (onWindows && "Segoe UI" in getUsableFontFamilyNamesOfSystem()) {
+                FontFamily("Segoe UI")
+            } else {
+                FontFamily.Default
+            }
+        }
 
         fun getUsableFontFamilyNamesOfSystem(): List<String> {
             return GraphicsEnvironment.getLocalGraphicsEnvironment().availableFontFamilyNames

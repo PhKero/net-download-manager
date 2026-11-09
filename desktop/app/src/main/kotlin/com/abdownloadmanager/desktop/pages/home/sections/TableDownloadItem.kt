@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -94,18 +95,13 @@ fun NameCell(
 //            tint = LocalContentColor.current / 75
         )
         Spacer(Modifier.width(6.dp))
-        Column {
-            Text(
-                text = itemState.name,
-                maxLines = 1,
-                fontSize = myTextSizes.base,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                category?.name ?: myStringResource(Res.string.general), maxLines = 1, fontSize = myTextSizes.xs,
-                color = LocalContentColor.current / 50
-            )
-        }
+        // IDM style: one line per download (the category is in the tree on the left)
+        Text(
+            text = itemState.name,
+            maxLines = 1,
+            fontSize = myTextSizes.base,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 
 }
@@ -443,24 +439,35 @@ private fun ProgressAndPercent(
     if (isError && errorReason != null) {
         statusString = errorReason.title
     }
-    Column {
+    // classic look: the bar fills the cell behind the text, so the row keeps one line
+    val fill = if (status != DownloadProgressStatus.Added && percent != null) {
+        animateFloatAsState((percent / 100f).coerceIn(0f..1f), tween(100)).value
+    } else 0f
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .border(Dp.Hairline, myColors.onSurface / 0.15f)
+            .drawBehind {
+                drawRect(
+                    brush = background,
+                    size = androidx.compose.ui.geometry.Size(size.width * fill, size.height),
+                    alpha = 0.45f,
+                )
+            }
+    ) {
         val statusText = if (gotAnyProgress) {
             "${percent ?: "."}% $statusString"
         } else {
             statusString
         }
-        SimpleStatus(
-            string = statusText,
-            color = if (isError) {
-                myColors.error
-            } else {
-                LocalContentColor.current
-            }
-        )
-        if (status != DownloadProgressStatus.Added) {
-            Spacer(Modifier.height(2.5.dp))
-            ProgressStatus(
-                percent, background
+        Box(Modifier.padding(horizontal = 3.dp)) {
+            SimpleStatus(
+                string = statusText,
+                color = if (isError) {
+                    myColors.error
+                } else {
+                    LocalContentColor.current
+                }
             )
         }
     }

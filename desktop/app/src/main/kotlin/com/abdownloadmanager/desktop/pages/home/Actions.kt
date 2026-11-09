@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 
 @Composable
 fun Actions(
@@ -160,37 +161,19 @@ private fun toolbarColorOf(icon: IconSource): Color {
     }
 }
 
-/** our own drawing: a raised rounded tile with a light-to-dark gradient and the white icon on it */
+/**
+ * classic IDM look: the icon itself in its colour, no tile behind it (a light hover box only);
+ * a button that can't be used now is drawn grey
+ */
 @Composable
-private fun ToolbarTile(icon: IconSource, size: androidx.compose.ui.unit.Dp) {
-    val color = toolbarColorOf(icon)
-    val shape = RoundedCornerShape(size * 0.26f)
-    Box(
-        Modifier
-            .size(size)
-            .shadow(2.dp, shape)
-            .clip(shape)
-            .background(Brush.verticalGradient(listOf(lerp(color, Color.White, 0.35f), color, lerp(color, Color.Black, 0.18f))))
-            .border(1.dp, lerp(color, Color.Black, 0.25f).copy(alpha = 0.6f), shape),
-        contentAlignment = Alignment.Center,
-    ) {
-        // glossy top half
-        Box(
-            Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .fillMaxHeight(0.45f)
-                .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.05f))))
-        )
-        MyIcon(
-            icon = icon,
-            contentDescription = null,
-            modifier = Modifier.size(size * 0.58f),
-            tint = Color.White,
-        )
-    }
+private fun ToolbarIcon(icon: IconSource, size: androidx.compose.ui.unit.Dp, enabled: Boolean) {
+    MyIcon(
+        icon = icon,
+        contentDescription = null,
+        modifier = Modifier.size(size),
+        tint = if (enabled) toolbarColorOf(icon) else myColors.onBackground / 0.35f,
+    )
 }
-
 @Composable
 private fun ActionIconWithLabel(
     title: StringSource,
@@ -202,25 +185,34 @@ private fun ActionIconWithLabel(
     OptionalTooltip(
         title.takeIf { !showLabels },
     ) {
+        val hover = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        val isHovered by hover.collectIsHoveredAsState()
         Column(
             modifier = Modifier
-                .clickable(enabled = enabled, onClick = onClick)
-                .ifThen(!enabled) {
-                    alpha(0.5f)
+                .clip(RoundedCornerShape(2.dp))
+                .ifThen(isHovered && enabled) {
+                    background(myColors.primary / 0.12f).border(1.dp, myColors.primary / 0.35f, RoundedCornerShape(2.dp))
                 }
-                .widthIn(min = if (showLabels) 64.dp else 0.dp)
-                .padding(horizontal = if (showLabels) 10.dp else 12.dp, vertical = if (showLabels) 6.dp else 12.dp),
+                .hoverable(hover)
+                .clickable(enabled = enabled, onClick = onClick)
+                .widthIn(min = if (showLabels) 58.dp else 0.dp)
+                .padding(horizontal = if (showLabels) 6.dp else 8.dp, vertical = if (showLabels) 4.dp else 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             WithContentColor(myColors.onBackground) {
                 WithContentAlpha(1f) {
                     icon?.let {
-                        // large colored tile with the label under it, like the classic IDM toolbar
-                        ToolbarTile(it, if (showLabels) 32.dp else 28.dp)
+                        // the coloured icon with the label under it, like the classic IDM toolbar
+                        ToolbarIcon(it, if (showLabels) 26.dp else 24.dp, enabled)
                     }
                     if (showLabels) {
-                        Spacer(Modifier.size(4.dp))
-                        Text(toolbarLabelOf(icon, title.rememberString()), maxLines = 1, fontSize = myTextSizes.sm)
+                        Spacer(Modifier.size(3.dp))
+                        Text(
+                            toolbarLabelOf(icon, title.rememberString()),
+                            maxLines = 1,
+                            fontSize = myTextSizes.sm,
+                            color = if (enabled) myColors.onBackground else myColors.onBackground / 0.4f,
+                        )
                     }
                 }
             }

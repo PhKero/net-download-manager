@@ -1,5 +1,8 @@
 package com.abdownloadmanager.desktop.extras
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -323,7 +326,8 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
         ),
     ) {
         WindowIcon(MyIcons.appIcon)
-        var step by remember { mutableStateOf(1) }
+        // test-only: NDM_GRABBER_STEP=2 opens on step 2 (for screenshots)
+        var step by remember { mutableStateOf(System.getenv("NDM_GRABBER_STEP")?.toIntOrNull()?.coerceIn(1, 2) ?: 1) }
         var projectName by remember { mutableStateOf("") }
         var startPage by remember { mutableStateOf("") }
         var username by remember { mutableStateOf("") }
@@ -437,20 +441,37 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
             }.also { job -> job.invokeOnCompletion { running = false } }
         }
 
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text(
+        val classicLine = myColors.onBackground / 0.25f
+        Column(Modifier.fillMaxSize().background(myColors.surface)) {
+            // classic wizard header: white strip with the step, a line under it
+            Column(
+                Modifier.fillMaxWidth().background(myColors.background)
+                    .drawBehind { drawLine(classicLine, androidx.compose.ui.geometry.Offset(0f, size.height - 0.5f), androidx.compose.ui.geometry.Offset(size.width, size.height - 0.5f), 1f) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    when (step) {
+                        1 -> tr("Step 1 of 3: the start page", "الخطوة 1 من 3: صفحة البداية")
+                        2 -> tr("Step 2 of 3: what to grab", "الخطوة 2 من 3: هتجمع إيه")
+                        else -> tr("Step 3 of 3: explore and choose files", "الخطوة 3 من 3: البحث واختيار الملفات")
+                    }.rememberString(),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = myTextSizes.base,
+                )
+                WithContentAlpha(0.7f) {
+                    Text(
+                        when (step) {
+                            1 -> tr("Where the Grabber starts looking for files", "المكان اللي جامع الملفات هيبدأ يدوّر منه")
+                            2 -> tr("Which files to collect and how far to look", "أنهي ملفات يجمعها ولحد فين يدوّر")
+                            else -> tr("Tick the files you want, then download them", "علّم على الملفات اللي عايزها وبعدين نزّلها")
+                        }.rememberString(),
+                        fontSize = myTextSizes.sm,
+                    )
+                }
+            }
+            Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
                 when (step) {
-                    1 -> tr("Step 1 of 3: the start page", "الخطوة 1 من 3: صفحة البداية")
-                    2 -> tr("Step 2 of 3: what to grab", "الخطوة 2 من 3: هتجمع إيه")
-                    else -> tr("Step 3 of 3: explore and choose files", "الخطوة 3 من 3: البحث واختيار الملفات")
-                }.rememberString(),
-                fontWeight = FontWeight.Bold,
-                fontSize = myTextSizes.lg,
-            )
-            Spacer(Modifier.height(12.dp))
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                when (step) {
-                    1 -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    1 -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (savedProjects.isNotEmpty()) {
                             WithContentAlpha(0.75f) {
                                 Text(tr("Saved projects (click one to load it)", "مشاريع محفوظة (اضغط على واحد عشان تفتحه)").rememberString(), fontSize = myTextSizes.sm)
@@ -467,40 +488,45 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                                 }
                             }
                         }
-                        LabeledField(tr("Project name", "اسم المشروع").rememberString(), projectName, { projectName = it }, tr("give it a name to save it", "اديله اسم عشان يتحفظ").rememberString())
-                        LabeledField(tr("Start page", "صفحة البداية").rememberString(), startPage, { startPage = it }, "https://example.com/files/")
-                        Spacer(Modifier.height(6.dp))
-                        WithContentAlpha(0.75f) {
-                            Text(tr("Authorization (only if the site asks for a login)", "تسجيل الدخول (لو الموقع طالب بس)").rememberString(), fontSize = myTextSizes.sm)
+                        GroupBox(tr("Project", "المشروع").rememberString()) {
+                            LabeledField(tr("Project name", "اسم المشروع").rememberString(), projectName, { projectName = it }, tr("give it a name to save it", "اديله اسم عشان يتحفظ").rememberString())
+                            LabeledField(tr("Start page", "صفحة البداية").rememberString(), startPage, { startPage = it }, "https://example.com/files/")
                         }
-                        LabeledField(tr("User name", "اسم المستخدم").rememberString(), username, { username = it }, "")
-                        LabeledField(tr("Password", "كلمة السر").rememberString(), password, { password = it }, "")
+                        GroupBox(tr("Authorization (only if the site asks for a login)", "تسجيل الدخول (لو الموقع طالب بس)").rememberString()) {
+                            LabeledField(tr("User name", "اسم المستخدم").rememberString(), username, { username = it }, "")
+                            LabeledField(tr("Password", "كلمة السر").rememberString(), password, { password = it }, "", isPassword = true)
+                        }
                     }
 
-                    2 -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        WithContentAlpha(0.75f) {
-                            Text(tr("Template", "النوع").rememberString(), fontSize = myTextSizes.sm)
-                        }
-                        for (t in GrabTemplate.entries) {
-                            Row(
-                                Modifier.clickable { template = t }.padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                RadioButton(template == t, { if (it) template = t })
-                                Spacer(Modifier.width(8.dp))
-                                Text(t.title().rememberString())
+                    2 -> Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                      GroupBox(tr("Template", "النوع").rememberString()) {
+                        // two columns, like a classic options page
+                        for (pair in GrabTemplate.entries.chunked(2)) {
+                            Row {
+                                for (t in pair) {
+                                    Row(
+                                        Modifier.weight(1f).clickable { template = t }.padding(vertical = 1.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        RadioButton(template == t, { if (it) template = t }, size = 13.dp)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(t.title().rememberString(), fontSize = myTextSizes.base)
+                                    }
+                                }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                         if (template == GrabTemplate.Custom) {
-                            MyTextField(customExtensions, { customExtensions = it }, "pdf, zip, mp4", Modifier.fillMaxWidth())
+                            ClassicField(customExtensions, { customExtensions = it }, "pdf, zip, mp4", Modifier.fillMaxWidth())
                         }
-                        Spacer(Modifier.height(6.dp))
+                      }
+                      GroupBox(tr("Exploring", "البحث").rememberString()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(tr("Explore links up to level", "استكشف اللينكات لحد مستوى").rememberString())
                             Spacer(Modifier.width(8.dp))
                             for (level in 0..3) {
                                 Row(Modifier.clickable { depth = level }.padding(end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    RadioButton(depth == level, { if (it) depth = level })
+                                    RadioButton(depth == level, { if (it) depth = level }, size = 13.dp)
                                     Spacer(Modifier.width(4.dp))
                                     Text("$level")
                                 }
@@ -509,31 +535,30 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(tr("Most pages to explore", "أقصى عدد صفحات").rememberString())
                             Spacer(Modifier.width(8.dp))
-                            MyTextField(maxPages, { v -> maxPages = v.filter { it.isDigit() }.take(3) }, "30", Modifier.width(70.dp))
+                            ClassicField(maxPages, { v -> maxPages = v.filter { it.isDigit() }.take(3) }, "30", Modifier.width(70.dp))
                         }
                         Row(Modifier.clickable { sameSite = !sameSite }, verticalAlignment = Alignment.CenterVertically) {
-                            CheckBox(sameSite, { sameSite = it })
-                            Spacer(Modifier.width(8.dp))
-                            Text(tr("Stay on the same site", "خليك في نفس الموقع").rememberString())
+                            CheckBox(sameSite, { sameSite = it }, size = 14.dp)
+                            Spacer(Modifier.width(6.dp))
+                            Text(tr("Stay on the same site", "خليك في نفس الموقع").rememberString(), fontSize = myTextSizes.base)
                         }
-                        Spacer(Modifier.height(4.dp))
-                        WithContentAlpha(0.75f) {
-                            Text(tr("Filters (optional). Use * for any text, separate with commas.", "فلاتر (اختياري). استخدم * لأي كلام، وافصل بفاصلة.").rememberString(), fontSize = myTextSizes.sm)
-                        }
+                      }
+                      GroupBox(tr("Filters (optional). Use * for any text, separate with commas.", "فلاتر (اختياري). استخدم * لأي كلام، وافصل بفاصلة.").rememberString()) {
                         LabeledField(tr("Only names like", "بس الأسماء اللي زي").rememberString(), includeNames, { includeNames = it }, "*wallpaper*, img_*")
                         LabeledField(tr("Skip names like", "تجاهل الأسماء اللي زي").rememberString(), excludeNames, { excludeNames = it }, "*thumb*, *small*")
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(tr("Size from", "الحجم من").rememberString(), Modifier.width(120.dp))
-                            MyTextField(minSizeKb, { v -> minSizeKb = v.filter { it.isDigit() }.take(9) }, "0", Modifier.width(80.dp))
+                            ClassicField(minSizeKb, { v -> minSizeKb = v.filter { it.isDigit() }.take(9) }, "0", Modifier.width(80.dp))
                             Text(" KB  " + tr("to", "لحد").rememberString() + "  ")
-                            MyTextField(maxSizeMb, { v -> maxSizeMb = v.filter { it.isDigit() }.take(7) }, "∞", Modifier.width(80.dp))
+                            ClassicField(maxSizeMb, { v -> maxSizeMb = v.filter { it.isDigit() }.take(7) }, "∞", Modifier.width(80.dp))
                             Text(" MB")
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(tr("Run again every", "شغّله تاني كل").rememberString(), Modifier.width(120.dp))
-                            MyTextField(runEveryHours, { v -> runEveryHours = v.filter { it.isDigit() }.take(4) }, "0", Modifier.width(80.dp))
+                            ClassicField(runEveryHours, { v -> runEveryHours = v.filter { it.isDigit() }.take(4) }, "0", Modifier.width(80.dp))
                             Text(" " + tr("hours: new files download by themselves (needs a project name, no login)", "ساعة: الملفات الجديدة بتتحمل لوحدها (محتاج اسم مشروع، ومن غير تسجيل دخول)").rememberString(), fontSize = myTextSizes.sm)
                         }
+                      }
                     }
 
                     else -> Column {
@@ -551,39 +576,50 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
                             Text(currentPage, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = myTextSizes.xs)
                         }
                         Spacer(Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CheckBox(unchecked.isEmpty() && found.isNotEmpty(), { all -> unchecked.clear(); if (!all) unchecked.addAll(found.map { it.url }) })
-                            Spacer(Modifier.width(8.dp))
-                            Text(tr("Select all", "اختيار الكل").rememberString(), fontSize = myTextSizes.sm)
-                        }
                         Spacer(Modifier.height(4.dp))
+                        // classic list: header strip with columns, white rows
+                        Column(Modifier.weight(1f).fillMaxWidth().border(1.dp, classicLine).background(myColors.background)) {
+                        Row(
+                            Modifier.fillMaxWidth().background(myColors.surface)
+                                .drawBehind { drawLine(classicLine, androidx.compose.ui.geometry.Offset(0f, size.height - 0.5f), androidx.compose.ui.geometry.Offset(size.width, size.height - 0.5f), 1f) }
+                                .padding(horizontal = 4.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CheckBox(unchecked.isEmpty() && found.isNotEmpty(), { all -> unchecked.clear(); if (!all) unchecked.addAll(found.map { it.url }) }, size = 14.dp)
+                            Spacer(Modifier.width(6.dp))
+                            Text(tr("Type", "النوع").rememberString(), Modifier.width(44.dp), fontSize = myTextSizes.base)
+                            Text(tr("Name", "الاسم").rememberString(), Modifier.weight(1f), fontSize = myTextSizes.base)
+                            Text(tr("Size", "الحجم").rememberString(), Modifier.width(70.dp), fontSize = myTextSizes.base)
+                        }
                         LazyColumn(
-                            Modifier.weight(1f).fillMaxWidth().background(myColors.surface / 0.5f).padding(4.dp)
+                            Modifier.weight(1f).fillMaxWidth()
                         ) {
                             items(found, key = { it.url }) { file ->
                                 val checked = file.url !in unchecked
                                 Row(
                                     Modifier.fillMaxWidth().clickable { if (checked) unchecked.add(file.url) else unchecked.remove(file.url) }
-                                        .padding(vertical = 3.dp, horizontal = 4.dp),
+                                        .padding(vertical = 2.dp, horizontal = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    CheckBox(checked, { if (it) unchecked.remove(file.url) else unchecked.add(file.url) })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(file.extension.uppercase(), Modifier.width(44.dp), fontSize = myTextSizes.xs, fontWeight = FontWeight.Bold)
-                                    Text(file.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    file.size?.let {
-                                        Spacer(Modifier.width(8.dp))
-                                        WithContentAlpha(0.7f) { Text(humanSize(it), fontSize = myTextSizes.xs) }
-                                    }
+                                    CheckBox(checked, { if (it) unchecked.remove(file.url) else unchecked.add(file.url) }, size = 14.dp)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(file.extension.uppercase(), Modifier.width(44.dp), fontSize = myTextSizes.sm, fontWeight = FontWeight.Bold)
+                                    Text(file.name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = myTextSizes.base)
+                                    Text(file.size?.let { humanSize(it) }.orEmpty(), Modifier.width(70.dp), fontSize = myTextSizes.base)
                                 }
                             }
+                        }
                         }
                     }
                 }
             }
-            Spacer(Modifier.height(12.dp))
             // IDM wizard buttons: < Back, Next >, Cancel
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth()
+                    .drawBehind { drawLine(classicLine, androidx.compose.ui.geometry.Offset(0f, 0f), androidx.compose.ui.geometry.Offset(size.width, 0f), 1f) }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 if (step == 3 && running) {
                     ActionButton(tr("Stop", "إيقاف").rememberString(), onClick = { crawlJob?.cancel(); crawlJob = null })
                 }
@@ -632,9 +668,34 @@ fun SiteGrabberWindow(onDownload: (links: List<String>, referer: String, usernam
 }
 
 @Composable
-private fun LabeledField(label: String, value: String, onChange: (String) -> Unit, placeholder: String) {
+private fun LabeledField(label: String, value: String, onChange: (String) -> Unit, placeholder: String, isPassword: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.width(120.dp))
-        MyTextField(value, onChange, placeholder, Modifier.weight(1f))
+        Text(label, Modifier.width(120.dp), fontSize = myTextSizes.base)
+        ClassicField(value, onChange, placeholder, Modifier.weight(1f), isPassword)
+    }
+}
+
+/** a small white text box, like the classic Windows ones */
+@Composable
+private fun ClassicField(value: String, onChange: (String) -> Unit, placeholder: String, modifier: Modifier, isPassword: Boolean = false) {
+    MyTextField(
+        value, onChange, placeholder, modifier,
+        background = myColors.background,
+        textPadding = PaddingValues(horizontal = 6.dp, vertical = 3.dp),
+        fontSize = myTextSizes.base,
+        visualTransformation = if (isPassword) androidx.compose.ui.text.input.PasswordVisualTransformation()
+        else androidx.compose.ui.text.input.VisualTransformation.None,
+    )
+}
+
+/** classic group box: thin frame with a title */
+@Composable
+private fun GroupBox(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().border(1.dp, myColors.onBackground / 0.2f).padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(title, fontSize = myTextSizes.base, fontWeight = FontWeight.SemiBold)
+        content()
     }
 }

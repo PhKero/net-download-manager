@@ -248,6 +248,14 @@ class HomeComponent(
                 +shutdown
                 separator()
             }
+            // IDM "View > Categories": shows the panel again after its x closed it
+            +simpleAction(
+                title = tr("Show / hide categories", "إظهار / إخفاء الفئات"),
+                icon = MyIcons.folder,
+            ) {
+                setCategoriesWidth { if (it > 40.dp) 0.dp else 200.dp }
+            }
+            separator()
             +browserIntegrations
             if (Platform.isLinux()) {
                 +createDesktopEntryAction
@@ -301,6 +309,10 @@ class HomeComponent(
     ).apply {
         homePageStateToPersist.value.downloadListState?.let {
             load(it)
+            // once, for lists saved before the IDM style Source column: hide the check boxes like IDM
+            if ("Source" !in it.order) {
+                setVisibleCells { cells -> cells - DownloadListCells.Check }
+            }
         }
         onPropChange.onEach {
             homePageStateToPersist.update {

@@ -67,8 +67,8 @@ Needs Windows, JetBrains Runtime 25, Node.js and NSIS. From the project root fol
 
 ## Licenses
 
-Apache-2.0, like AB Download Manager. Bundled programs (yt-dlp, FFmpeg, aria2) keep their own
-licenses, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Apache-2.0, like AB Download Manager. Bundled programs (yt-dlp, aria2) and FFmpeg (downloaded the
+first time a video needs it) keep their own licenses, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ---
 

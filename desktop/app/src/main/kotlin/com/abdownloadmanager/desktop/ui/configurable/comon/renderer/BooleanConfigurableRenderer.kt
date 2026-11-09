@@ -1,6 +1,7 @@
 package com.abdownloadmanager.desktop.ui.configurable.comon.renderer
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import com.abdownloadmanager.desktop.ui.configurable.ConfigTemplate
@@ -26,33 +27,20 @@ object BooleanConfigurableRenderer : ConfigurableRenderer<BooleanConfigurable> {
         val checked = cfg.stateFlow.collectAsState().value
         val setValue = cfg::set
         val enabled = isConfigEnabled()
-        ConfigTemplate(
-            modifier = configurableUiProps.modifier.padding(configurableUiProps.itemPaddingValues),
-            title = {
-                TitleAndDescription(cfg)
-            },
-            value = {
-                when (cfg.renderMode) {
-                    BooleanConfigurable.RenderMode.Checkbox -> {
-                        CheckBox(
-                            value = checked,
-                            enabled = enabled,
-                            onValueChange = {
-                                setValue(it)
-                            }
-                        )
-                    }
-
-                    BooleanConfigurable.RenderMode.Switch -> {
-                        Switch(
-                            checked = checked,
-                            enabled = enabled,
-                            onCheckedChange = {
-                                setValue(it)
-                            }
-                        )
-                    }
+        // classic look: a check box in front of the option name
+        androidx.compose.foundation.layout.Row(
+            configurableUiProps.modifier.padding(configurableUiProps.itemPaddingValues),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            CheckBox(
+                value = checked,
+                enabled = enabled,
+                size = 14.dp,
+                onValueChange = {
+                    setValue(it)
                 }
-            })
+            )
+            TitleAndDescription(cfg)
+        }
     }
 }

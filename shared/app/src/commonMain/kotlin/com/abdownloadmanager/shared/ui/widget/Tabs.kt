@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import com.abdownloadmanager.shared.util.div
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,8 +25,8 @@ import ir.amirab.util.ifThen
 @Composable
 fun MyTabRow(content: @Composable RowScope.() -> Unit) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
     ) {
         content()
     }
@@ -35,35 +38,26 @@ fun MyTab(
     onClick: () -> Unit,
     icon: IconSource,
     title: StringSource,
-    selectionBackground: Color = myColors.surface,
+    selectionBackground: Color = myColors.background,
 ) {
-    WithContentAlpha(
-        if (selected) 1f else 0.75f
+    // classic Windows tab: framed on top and sides, the chosen one is lighter and a bit taller
+    val line = myColors.onBackground / 0.25f
+    Box(
+        Modifier
+            .padding(top = if (selected) 0.dp else 2.dp)
+            .background(if (selected) selectionBackground else myColors.surface)
+            .drawBehind {
+                drawLine(line, Offset(0f, 0f), Offset(size.width, 0f), 1f)
+                drawLine(line, Offset(0f, 0f), Offset(0f, size.height), 1f)
+                drawLine(line, Offset(size.width - 1f, 0f), Offset(size.width - 1f, size.height), 1f)
+            }
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .ifThen(selected) {
-                    background(selectionBackground)
-                }
-                .clickable { onClick() }
-                .heightIn(mySpacings.thumbSize)
-                .padding(horizontal = 12.dp)
-                .padding(vertical = 6.dp)
-
-        ) {
-            MyIcon(icon, null, Modifier.size(16.dp))
-            Spacer(Modifier.width(4.dp))
-            Text(
-                title.rememberString(),
-                maxLines = 1,
-                fontSize = myTextSizes.base,
-                fontWeight = if (selected) {
-                    FontWeight.Bold
-                } else {
-                    FontWeight.Medium
-                }
-            )
-        }
+        Text(
+            title.rememberString(),
+            maxLines = 1,
+            fontSize = myTextSizes.base,
+        )
     }
 }

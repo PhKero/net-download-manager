@@ -64,6 +64,29 @@ open class BaseEnterNewURLComponent(
         _url.value = url
     }
 
+    // "Use authorization": a login / password sent with the request (HTTP, HLS and video links)
+    private val _useAuth = MutableStateFlow(false)
+    val useAuth = _useAuth.asStateFlow()
+    fun setUseAuth(v: Boolean) { _useAuth.value = v }
+    private val _login = MutableStateFlow("")
+    val login = _login.asStateFlow()
+    fun setLogin(v: String) { _login.value = v }
+    private val _password = MutableStateFlow("")
+    val password = _password.asStateFlow()
+    fun setPassword(v: String) { _password.value = v }
+
+    private fun withAuth(credentials: IDownloadCredentials): IDownloadCredentials {
+        if (!useAuth.value || login.value.isBlank()) return credentials
+        val user = login.value
+        val pass = password.value.ifEmpty { null }
+        return when (credentials) {
+            is ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials -> credentials.copy(username = user, password = pass)
+            is ir.amirab.downloader.downloaditem.hls.HLSDownloadCredentials -> credentials.copy(username = user, password = pass)
+            is ir.amirab.downloader.downloaditem.ytdlp.YtDlpDownloadCredentials -> credentials.copy(username = user, password = pass)
+            else -> credentials
+        }
+    }
+
     var firstTimeOpened = false
     open val shouldFillWithClipboard = true
     fun onPageOpen() {
@@ -106,7 +129,7 @@ open class BaseEnterNewURLComponent(
                 picked
             }
             onRequestFinished(
-                downloader.createMinimumCredentials(link)
+                withAuth(downloader.createMinimumCredentials(link))
             )
             onCloseRequest()
         }

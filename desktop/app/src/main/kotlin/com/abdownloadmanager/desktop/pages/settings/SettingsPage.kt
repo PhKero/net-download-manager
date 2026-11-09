@@ -172,7 +172,7 @@ private fun OptionsTabs(settingsComponent: DesktopSettingsComponent) {
     ) {
         for (page in settingsComponent.pages) {
             val isSelected = page == current
-            val shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+            val shape = RoundedCornerShape(0.dp)
             Row(
                 Modifier
                     .padding(end = 2.dp)
@@ -182,15 +182,13 @@ private fun OptionsTabs(settingsComponent: DesktopSettingsComponent) {
                             .border(1.dp, lineColor, shape)
                     }
                     .selectable(selected = isSelected, onClick = { settingsComponent.setCurrentPage(page) })
-                    .padding(horizontal = 12.dp, vertical = if (isSelected) 8.dp else 6.dp),
+                    .padding(horizontal = 8.dp, vertical = if (isSelected) 5.dp else 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 WithContentAlpha(if (isSelected) 1f else 0.7f) {
-                    MyIcon(page.icon, null, Modifier.size(14.dp))
-                    Spacer(Modifier.width(6.dp))
                     Text(
                         page.name.rememberString(),
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = FontWeight.Normal,
                         fontSize = myTextSizes.base,
                         maxLines = 1,
                     )
@@ -230,15 +228,15 @@ fun SettingsPage(
                                 horizontal = 8.dp,
                                 vertical = 8.dp
                             ),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         for (cfgGroup in configurableGroups) {
                             RenderConfigurableGroup(
                                 cfgGroup,
                                 Modifier,
                                 itemPadding = PaddingValues(
-                                    vertical = 8.dp,
-                                    horizontal = 16.dp
+                                    vertical = 1.dp,
+                                    horizontal = 8.dp
                                 )
                             )
                         }

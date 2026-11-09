@@ -327,44 +327,60 @@ fun HomePage(component: HomeComponent) {
                     .height(1.dp)
                     .background(myColors.onBackground / 10)
             )
-            Row {
+            // IDM style: the category tree and the list are white boxes with a thin border on the
+            // grey window, and a status bar runs along the whole bottom
+            val panelBorder = myColors.onBackground / 0.25f
+            Row(Modifier.weight(1f).background(myColors.surface).padding(start = 4.dp, end = 4.dp, top = 4.dp)) {
                 val categoriesWidth by component.categoriesWidth.collectAsState()
+                if (categoriesWidth > 40.dp) {
                 Column(
                     Modifier
-                        .padding(top = 8.dp).width(categoriesWidth)
-                        .verticalScroll(rememberScrollState())
+                        .width(categoriesWidth)
+                        .fillMaxHeight()
+                        .border(1.dp, panelBorder)
+                        .background(myColors.background)
                 ) {
-                    // IDM style heading above the category tree
-                    Text(
-                        trs("Categories", "الفئات"),
-                        Modifier.padding(start = 12.dp, bottom = 4.dp),
-                        fontSize = myTextSizes.base,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Categories(
-                        modifier = Modifier.fillMaxWidth(),
-                        component = component,
-                    )
-                    Spacer(Modifier.size(8.dp))
-                    QueuesSection(
-                        modifier = Modifier.fillMaxWidth(),
-                        component = component,
-                    )
-                    Spacer(Modifier.size(8.dp))
+                    // IDM: "Categories" with an x that hides the panel (View > Categories shows it again)
+                    Row(
+                        Modifier.fillMaxWidth().background(myColors.surface).padding(start = 6.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            trs("Categories", "الفئات"),
+                            Modifier.weight(1f),
+                            fontSize = myTextSizes.base,
+                        )
+                        Text(
+                            "✕",
+                            Modifier.clickable { component.setCategoriesWidth { 0.dp } }.padding(horizontal = 4.dp),
+                            fontSize = myTextSizes.sm,
+                        )
+                    }
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        Categories(
+                            modifier = Modifier.fillMaxWidth(),
+                            component = component,
+                        )
+                        Spacer(Modifier.size(6.dp))
+                        QueuesSection(
+                            modifier = Modifier.fillMaxWidth(),
+                            component = component,
+                        )
+                        Spacer(Modifier.size(6.dp))
+                    }
                 }
-                Spacer(Modifier.size(8.dp))
                 //split pane
                 Handle(
-                    Modifier.width(5.dp)
+                    Modifier.width(4.dp)
                         .fillMaxHeight()
                 ) { delta ->
                     component.setCategoriesWidth { it + delta }
                 }
-                Column(Modifier.weight(1f).padding(top = 4.dp)) {
+                }
+                Column(Modifier.weight(1f).border(1.dp, panelBorder).background(myColors.background)) {
                     var lastSelected by remember { mutableStateOf(null as Long?) }
                     DownloadList(
                         modifier = Modifier
-                            .padding(horizontal = 4.dp)
                             .fillMaxWidth()
                             .weight(1f),
                         downloadList = listState,
@@ -394,17 +410,9 @@ fun HomePage(component: HomeComponent) {
                         lazyListState = lazyListState,
                         failedDownloadReasons = component.failedDownloads.collectAsState().value,
                     )
-                    Spacer(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(2.dp)
-                            .background(
-                                myColors.surface
-                            )
-                    )
-                    Footer(component)
                 }
             }
+            Footer(component)
         }
         NotificationArea(
             Modifier
@@ -846,67 +854,39 @@ private fun HomeMenuBar(
     }
 }
 
+/** IDM style status bar: "7 downloads" on the left, "1 downloading, 1.6 MB/sec" on the right */
 @Composable
 private fun Footer(component: HomeComponent) {
+    val selectionCount = component.selectionList.collectAsState().value.size
+    val totalCount = component.downloadList.collectAsState().value.size
+    val selectionSize by component.selectionContentSize.collectAsState()
+    val activeCount by component.activeDownloadCountFlow.collectAsState()
+    val speed by component.globalSpeedFlow.collectAsState(0)
+    val speedWithUnit = convertPositiveBytesToSizeUnit(speed, LocalSpeedUnit.current)
+    val sizeWithUnit = convertPositiveBytesToSizeUnit(selectionSize, LocalSizeUnit.current)
     Row(
-        modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(myColors.surface)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        val selectionCount = component.selectionList.collectAsState().value.size
-        val totalCount = component.downloadList.collectAsState().value.size
-
-        val selectionSize by component.selectionContentSize.collectAsState()
-
-        if (selectionCount > 0) {
-            FooterItem(
-                MyIcons.check,
-                value = "$selectionCount",
-                unit = "/ $totalCount"
-            )
-
-            Spacer(Modifier.width(4.dp))
-            val sizeWithUnit = convertPositiveBytesToSizeUnit(selectionSize, LocalSizeUnit.current)
-            if (sizeWithUnit != null) {
-                FooterItem(
-                    MyIcons.data,
-                    value = sizeWithUnit.formatedValue(),
-                    unit = sizeWithUnit.unit.toString()
-                )
-            }
+        val left = if (selectionCount > 0) {
+            trs("$selectionCount of $totalCount selected", "$selectionCount من $totalCount محدد") +
+                (sizeWithUnit?.let { ", ${it.formatedValue()} ${it.unit}" } ?: "")
+        } else {
+            trs("$totalCount downloads", "$totalCount تحميل")
         }
-
-
-        Spacer(Modifier.weight(1f))
-        val activeCount by component.activeDownloadCountFlow.collectAsState()
-        FooterItem(MyIcons.activeCount, activeCount.toString(), "")
-        val speed by component.globalSpeedFlow.collectAsState(0)
-        val speedWithUnit = convertPositiveBytesToSizeUnit(speed, LocalSpeedUnit.current)
-        if (speedWithUnit != null) {
-            Spacer(Modifier.width(4.dp))
-            val speedText = speedWithUnit.formatedValue()
-            val unitText = speedWithUnit.unit.toString() + "/s"
-            FooterItem(MyIcons.speed, speedText, unitText)
-        }
+        Text(left, Modifier.weight(1f), maxLines = 1, fontSize = myTextSizes.sm)
+        val speedText = speedWithUnit?.let { "${it.formatedValue()} ${it.unit}/sec" } ?: "0 B/sec"
+        Text(
+            if (activeCount > 0) trs("$activeCount downloading, $speedText", "$activeCount قيد التحميل، $speedText")
+            else trs("Ready", "جاهز"),
+            maxLines = 1,
+            fontSize = myTextSizes.sm,
+        )
     }
 }
-
-@Composable
-private fun FooterItem(icon: IconSource, value: String, unit: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        WithContentAlpha(0.50f) {
-            MyIcon(icon, null, Modifier.size(16.dp))
-        }
-        Spacer(Modifier.width(8.dp))
-        WithContentAlpha(1f) {
-            Text(value, maxLines = 1, fontSize = myTextSizes.base)
-        }
-        Spacer(Modifier.width(8.dp))
-        WithContentAlpha(0.5f) {
-            Text(unit, maxLines = 1, fontSize = myTextSizes.base)
-        }
-    }
-}
-
 @Composable
 private fun TopBar(component: HomeComponent) {
     Row(

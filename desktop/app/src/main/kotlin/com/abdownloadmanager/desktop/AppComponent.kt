@@ -620,6 +620,18 @@ class AppComponent(
     }
 
     init {
+        // test-only: NDM_SHOW_WINDOWS=settings,queues,enterurl opens those windows at startup (for screenshots)
+        System.getenv("NDM_SHOW_WINDOWS")?.split(',')?.map { it.trim() }?.let { names ->
+            scope.launch(kotlinx.coroutines.Dispatchers.Default) {
+                kotlinx.coroutines.delay(3000)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    if ("settings" in names) openSettings()
+                    if ("queues" in names) openQueues(null)
+                    if ("enterurl" in names) openEnterNewURLWindow()
+                    if ("grabber" in names) com.abdownloadmanager.desktop.extras.SiteGrabber.open()
+                }
+            }
+        }
         ClipboardMonitor(extrasSettings.clipboardMonitor, ::onLinkCopied).start(scope)
         updateYtDlpIfDue()
         DownloadQuota(

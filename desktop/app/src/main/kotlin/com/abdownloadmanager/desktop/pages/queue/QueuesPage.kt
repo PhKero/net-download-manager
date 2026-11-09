@@ -1,5 +1,8 @@
 package com.abdownloadmanager.desktop.pages.queue
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import ir.amirab.util.compose.trs
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -375,10 +378,7 @@ private fun RenderQueueConfig(
                 RenderConfigurableGroup(
                     cfgGroup,
                     Modifier,
-                    itemPadding = PaddingValues(
-                        vertical = 8.dp,
-                        horizontal = 16.dp
-                    ),
+                    itemPadding = PaddingValues(vertical = 1.dp, horizontal = 8.dp),
                 )
             }
         }
@@ -394,10 +394,17 @@ private fun QueueListSection(
     component: QueuesComponent,
 ) {
     Column(modifier) {
+        Text(
+            trs("Queues", "الطوابير"),
+            Modifier.fillMaxWidth().padding(vertical = 4.dp).wrapContentWidth(Alignment.CenterHorizontally),
+            fontSize = myTextSizes.base,
+        )
+        // classic list: plain rows, the chosen one highlighted
         Column(
             Modifier
-                .padding(top = 12.dp)
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 4.dp)
+                .border(1.dp, myColors.onBackground / 0.2f)
+                .background(myColors.background)
                 .verticalScroll(rememberScrollState())
                 .weight(1f)
         ) {
@@ -405,21 +412,25 @@ private fun QueueListSection(
                 val queueModel by s.queueModel.collectAsState()
                 val isQueueActive by s.activeFlow.collectAsState()
                 val isSelected = selectedItem == s.id
-                NavigateableItem(
-                    isSelected = isSelected,
-                    onClick = { setSelected(s.id) }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(if (isSelected) myColors.primary / 0.22f else Color.Transparent)
+                        .clickable { setSelected(s.id) }
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     MyIcon(
                         MyIcons.folder,
                         null,
-                        Modifier.size(16.dp)
+                        Modifier.size(14.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         queueModel.name,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = myTextSizes.base,
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
@@ -439,31 +450,25 @@ private fun QueueListSection(
             }
         }
         val spacer = @Composable { Spacer(Modifier.width(4.dp)) }
-        Spacer(
-            Modifier
-                .background(myColors.onBackground / 5)
-                .fillMaxWidth()
-                .height(1.dp)
-        )
         Row(
             modifier = Modifier
                 .padding(vertical = 4.dp)
                 .padding(horizontal = 8.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.Center
         ) {
-            IconActionButton(
-                icon = MyIcons.add,
-                contentDescription = Res.string.add_new_queue.asStringSource(),
+            ActionButton(
+                text = trs("New queue", "طابور جديد"),
+                contentPadding = PaddingValues(vertical = 4.dp, horizontal = 10.dp),
                 onClick = {
                     component.addQueue()
                 }
             )
             spacer()
-            IconActionButton(
-                icon = MyIcons.remove,
-                contentDescription = Res.string.remove_queue.asStringSource(),
+            ActionButton(
+                text = trs("Delete", "حذف"),
+                contentPadding = PaddingValues(vertical = 4.dp, horizontal = 10.dp),
                 enabled = component.canDeleteThisQueue(selectedItem),
                 onClick = {
                     component.requestDeleteQueue(selectedItem)

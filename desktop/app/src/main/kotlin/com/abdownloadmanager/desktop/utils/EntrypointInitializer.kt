@@ -27,6 +27,11 @@ object EntrypointInitializer {
                 )
             }
             AppProperties.boot(AppInfo.definedPaths.appPropertiesFile)
+            // ffmpeg is downloaded here the first time a video needs it
+            System.setProperty(
+                ir.amirab.downloader.downloaditem.ytdlp.FfmpegFetcher.TOOLS_DIR_PROPERTY,
+                AppInfo.definedPaths.systemDir.resolve("tools").toString(),
+            )
 
             // FileKit is currently only used for file and directory pickers.
             // Its initialization has no effect, but we keep it here for future-proofing.

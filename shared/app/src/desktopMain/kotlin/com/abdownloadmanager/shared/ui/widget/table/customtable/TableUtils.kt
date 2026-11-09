@@ -194,13 +194,12 @@ fun <T> RowScope.MaybeSortableCell(
                 },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SortIndicator(
-                Modifier,
-                iHaveSorted?.toSortIndicatorMode()
-                    ?: SortIndicatorMode.None
-            )
-            Spacer(Modifier.width(2.dp))
-            content()
+            // classic Windows list header: only the sorted column shows its arrow, after the name
+            Box(Modifier.weight(1f, fill = false)) { content() }
+            if (iHaveSorted != null) {
+                Spacer(Modifier.width(3.dp))
+                SortIndicator(Modifier, iHaveSorted.toSortIndicatorMode())
+            }
         }
     } else {
         content()

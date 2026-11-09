@@ -3,7 +3,7 @@ package com.abdownloadmanager.desktop.pages.enterurl
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,6 +41,11 @@ import com.abdownloadmanager.resources.Res
 import com.abdownloadmanager.shared.downloaderinui.TADownloaderInUI
 import com.abdownloadmanager.shared.pages.enterurl.DownloaderSelection
 import com.abdownloadmanager.shared.ui.widget.ActionButton
+import com.abdownloadmanager.shared.ui.widget.CheckBox
+import com.abdownloadmanager.shared.ui.widget.MyTextField
+import com.abdownloadmanager.shared.util.ui.WithContentAlpha
+import com.abdownloadmanager.shared.util.ui.theme.myTextSizes
+import ir.amirab.util.compose.trs
 import com.abdownloadmanager.shared.ui.widget.Text
 import com.abdownloadmanager.shared.util.div
 import com.abdownloadmanager.shared.util.ui.WithContentColor
@@ -59,44 +64,100 @@ fun EnterNewURLPage(component: DesktopEnterNewURLComponent) {
         component.onPageOpen()
     }
     val text by component.url.collectAsState()
-    Column {
-        Column(
-            Modifier
-                .padding(top = 8.dp)
-                .padding(horizontal = 16.dp)
-        ) {
-
-            UrlTextField(
-                text = text,
-                setText = component::setURL,
-                modifier = Modifier
-                    .focusRequester(linkFocus)
-                    .fillMaxWidth()
-            )
-        }
-        Spacer(Modifier.weight(1f))
-        Column {
-            Spacer(
+    val useAuth by component.useAuth.collectAsState()
+    // classic "Enter new address to download" dialog
+    Row(
+        Modifier
+            .fillMaxSize()
+            .background(myColors.surface)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(trs("Address", "العنوان"), fontSize = myTextSizes.base, modifier = Modifier.width(56.dp))
+                UrlTextField(
+                    text = text,
+                    setText = component::setURL,
+                    modifier = Modifier
+                        .focusRequester(linkFocus)
+                        .weight(1f)
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Column(
                 Modifier
                     .fillMaxWidth()
-                    .height(1.dp)
-                    .background(myColors.onBackground / 0.15f)
-            )
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(myColors.surface / 0.5f)
-                    .padding(horizontal = 16.dp)
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .border(1.dp, myColors.onBackground / 0.2f)
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
             ) {
-                DownloaderSelectionSection(component)
-                Spacer(Modifier.weight(1f))
-                Actions(component)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { component.setUseAuth(!useAuth) },
+                ) {
+                    CheckBox(useAuth, component::setUseAuth, size = 14.dp)
+                    Spacer(Modifier.width(4.dp))
+                    Text(trs("Use authorization", "استخدام تسجيل الدخول"), fontSize = myTextSizes.base)
+                }
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AuthField(
+                        label = trs("Login", "اسم المستخدم"),
+                        value = component.login.collectAsState().value,
+                        onChange = component::setLogin,
+                        enabled = useAuth,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    AuthField(
+                        label = trs("Password", "كلمة المرور"),
+                        value = component.password.collectAsState().value,
+                        onChange = component::setPassword,
+                        enabled = useAuth,
+                        isPassword = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.width(IntrinsicSize.Max)) {
+            Actions(component)
+            Spacer(Modifier.weight(1f))
+            DownloaderSelectionSection(component)
+        }
     }
+}
 
+@Composable
+private fun AuthField(
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    enabled: Boolean,
+    modifier: Modifier,
+    isPassword: Boolean = false,
+) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        WithContentAlpha(if (enabled) 0.8f else 0.4f) {
+            Text(label, fontSize = myTextSizes.sm, maxLines = 1)
+        }
+        Spacer(Modifier.width(6.dp))
+        MyTextField(
+            text = value,
+            onTextChange = onChange,
+            placeholder = "",
+            modifier = Modifier.weight(1f),
+            background = myColors.background,
+            enabled = enabled,
+            textPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+            fontSize = myTextSizes.base,
+            visualTransformation = if (isPassword) {
+                androidx.compose.ui.text.input.PasswordVisualTransformation()
+            } else {
+                androidx.compose.ui.text.input.VisualTransformation.None
+            },
+        )
+    }
 }
 
 @Composable
@@ -221,14 +282,16 @@ private fun Actions(
 ) {
     ActionButton(
         myStringResource(Res.string.ok),
+        modifier = Modifier.fillMaxWidth(),
         enabled = component.canAdd.collectAsState().value,
         onClick = {
             component.newDownloadEntered()
         }
     )
-    Spacer(Modifier.width(8.dp))
+    Spacer(Modifier.height(6.dp))
     ActionButton(
         myStringResource(Res.string.cancel),
+        modifier = Modifier.fillMaxWidth(),
         onClick = component::close
     )
 }
@@ -244,15 +307,7 @@ private fun UrlTextField(
         text,
         setText,
         myStringResource(Res.string.download_link),
-        modifier = modifier.fillMaxWidth(),
-        start = {
-            MyIcon(
-                MyIcons.link,
-                null,
-                Modifier.padding(horizontal = 8.dp)
-                    .size(16.dp),
-            )
-        },
+        modifier = modifier,
         end = {
             MyTextFieldIcon(MyIcons.paste) {
                 setText(

@@ -121,8 +121,8 @@ private fun ReorderableListItemScope.CategoryFilterItem(
         }
         Row(
             modifier = Modifier
-                .padding(start = 32.dp)
-                .padding(horizontal = 4.dp, vertical = 6.dp),
+                .padding(start = 30.dp)
+                .padding(horizontal = 4.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             WithContentAlpha(if (isSelected) 1f else 0.85f) {
@@ -135,7 +135,7 @@ private fun ReorderableListItemScope.CategoryFilterItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = myTextSizes.base
+                    fontSize = myTextSizes.base,
                 )
                 AnimatedVisibility(
                     visible = shouldShowDragIcon,
@@ -187,12 +187,12 @@ private fun TreeExpander(isExpanded: Boolean, onClick: () -> Unit) {
     val color = myColors.onBackground / 0.6f
     Box(
         Modifier
-            .size(18.dp)
-            .clip(RoundedCornerShape(3.dp))
+            .size(16.dp)
+            .clip(RoundedCornerShape(2.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(11.dp)) {
+        Canvas(Modifier.size(9.dp)) {
             val s = size.width
             drawRect(color, style = Stroke(1f))
             drawLine(color, Offset(s * 0.25f, s / 2), Offset(s * 0.75f, s / 2), 1.5f)
@@ -206,7 +206,7 @@ private fun TreeExpander(isExpanded: Boolean, onClick: () -> Unit) {
 /** IDM style yellow folder, our own drawing, with the category's own icon small on it */
 @Composable
 private fun TreeFolderIcon(icon: IconSource, open: Boolean = false) {
-    Box(Modifier.size(20.dp, 16.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(18.dp, 14.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.matchParentSize()) {
             val w = size.width
             val h = size.height
@@ -280,7 +280,7 @@ fun StatusFilterItem(
                     )
             ) {
                 Row(
-                    Modifier.padding(vertical = 4.dp)
+                    Modifier.padding(vertical = 2.dp)
                         .padding(start = 4.dp)
                         .padding(end = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -295,7 +295,7 @@ fun StatusFilterItem(
                             statusFilter.name.rememberString(),
                             Modifier.weight(1f),
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = myTextSizes.lg,
+                            fontSize = myTextSizes.base,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                         )

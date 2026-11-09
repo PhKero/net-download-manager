@@ -25,7 +25,7 @@ as separate processes. Their license texts are in `app/resources/licenses`.
 | Program | Version | License | Source code |
 |---|---|---|---|
 | yt-dlp | 2026.10.21 | The Unlicense (public domain) | https://github.com/yt-dlp/yt-dlp |
-| FFmpeg (ffmpeg, ffprobe), build by gyan.dev | 9.0.2 | GNU GPL v3 | https://github.com/FFmpeg/FFmpeg/commit/946fcce07b , build scripts: https://www.gyan.dev/ffmpeg/builds/ |
+| FFmpeg (ffmpeg, ffprobe), "essentials" build by gyan.dev. Not in the installer: downloaded unmodified into the app's data folder the first time a video needs it (checked by SHA-256) | 9.0.2 | GNU GPL v3 | https://github.com/FFmpeg/FFmpeg/commit/946fcce07b , build scripts: https://www.gyan.dev/ffmpeg/builds/ |
 | aria2 | 1.37.0 | GNU GPL v2 or later (with OpenSSL exception) | https://github.com/aria2/aria2/tree/release-1.37.0 |
 
 ## Libraries

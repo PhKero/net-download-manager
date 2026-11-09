@@ -34,7 +34,7 @@ private fun EnterNewDownloadWindow(
     val windowState = rememberWindowState(
         initialBoundsProvider = WindowBoundsProvider(
             sizeProvider = WindowSizeProvider.Fixed(
-                size = DpSize(400.dp, 150.dp)
+                size = DpSize(560.dp, 156.dp)
                     .applyUiScale(LocalUiScale.current),
             ),
             positionProvider = WindowPositionProvider.CenteredOnScreen
@@ -44,7 +44,7 @@ private fun EnterNewDownloadWindow(
         state = windowState,
         onCloseRequest = component::close,
         windowController = rememberWindowController(
-            title = myStringResource(Res.string.new_download),
+            title = ir.amirab.util.compose.trs("Enter new address to download", "أدخل عنوان تحميل جديد"),
         ),
     ) {
         HandleEffects(component) {

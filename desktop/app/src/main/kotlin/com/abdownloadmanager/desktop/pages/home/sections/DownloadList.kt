@@ -1,5 +1,6 @@
 package com.abdownloadmanager.desktop.pages.home.sections
 
+import com.abdownloadmanager.shared.util.div
 import com.abdownloadmanager.shared.util.DOUBLE_CLICK_DELAY
 import com.abdownloadmanager.shared.util.ui.WithContentAlpha
 import com.abdownloadmanager.shared.util.ui.myColors
@@ -131,7 +132,8 @@ fun DownloadList(
             isALlSelected,
         )
     ) {
-        val itemHorizontalPadding = 16.dp
+        // IDM style: thin rows close to the window edge
+        val itemHorizontalPadding = 4.dp
         // IDM "Q" column: the queue each download is in
         val queues by queueManager.queues.collectAsState()
         val queueNameOf by remember(queues) {
@@ -268,7 +270,6 @@ fun DownloadList(
                                     )
                                     newSelection(ids, true)
                                 }
-                                .padding(vertical = 1.dp)
                                 .clip(shape)
                                 .indication(
                                     interactionSource = itemInteractionSource,
@@ -280,19 +281,13 @@ fun DownloadList(
                                 )
                                 .let {
                                     if (isSelected) {
-                                        val selectionColor = myColors.onBackground
-                                        it
-                                            .border(
-                                                1.dp,
-                                                myColors.selectionGradient(0.10f, 0.05f, selectionColor),
-                                                shape
-                                            )
-                                            .background(myColors.selectionGradient(0.15f, 0.03f, selectionColor))
+                                        // classic Windows list: a plain light-blue selection
+                                        it.background(myColors.primary / 0.22f)
                                     } else {
-                                        it.border(1.dp, Color.Transparent)
+                                        it
                                     }
                                 }
-                                .padding(vertical = 6.dp, horizontal = itemHorizontalPadding)
+                                .padding(vertical = 2.dp, horizontal = itemHorizontalPadding)
                         ) {
                             rowContent()
                         }
@@ -352,6 +347,10 @@ fun DownloadList(
 
                 DownloadListCells.Location -> {
                     LocationCell(item)
+                }
+
+                DownloadListCells.Source -> {
+                    SourceBadge(item.downloadLink)
                 }
 
                 DownloadListCells.Queue -> {
@@ -478,6 +477,16 @@ sealed interface DownloadListCells : TableCell<IDownloadItemState> {
         override val size: CellSize = CellSize.Resizeable(50.dp..1000.dp, 200.dp)
     }
 
+    // IDM style "Source" column: where the download comes from, as a small coloured badge
+    data object Source : DownloadListCells,
+        SortableCell<IDownloadItemState> {
+        override fun comparator(): Comparator<IDownloadItemState> = compareBy { sourceOf(it.downloadLink).ordinal }
+
+        override val id: String = "Source"
+        override val name: StringSource = tr("Source", "المصدر")
+        override val size: CellSize = CellSize.Resizeable(44.dp..120.dp, 58.dp)
+    }
+
     data object Queue : DownloadListCells,
         SortableCell<IDownloadItemState> {
         override fun comparator(): Comparator<IDownloadItemState> = compareBy { it.id }
@@ -500,6 +509,7 @@ sealed interface DownloadListCells : TableCell<IDownloadItemState> {
         val allCells: List<DownloadListCells> = listOf(
             // IDM order: File Name | Q | Size | Status | Time left | Transfer rate | Last Try Date | Description
             Check,
+            Source,
             Name,
             Queue,
             Size,
@@ -513,6 +523,8 @@ sealed interface DownloadListCells : TableCell<IDownloadItemState> {
             Location,
         )
         private val disabledByDefault = listOf(
+            // IDM has no check boxes: select with the mouse (Ctrl / Shift for more)
+            Check,
             DateAdded,
             DateFinished,
             Location,
@@ -520,6 +532,42 @@ sealed interface DownloadListCells : TableCell<IDownloadItemState> {
         val initiallyVisibleCells: List<DownloadListCells> = allCells
             .filterNot { it in disabledByDefault }
     }
+}
+
+enum class DownloadSource(val label: String, val color: Long) {
+    Web("Web", 0xFF2E9E46),
+    Video("Video", 0xFFD9363E),
+    Torrent("Torrent", 0xFF7B4FC9),
+    Ftp("FTP", 0xFF1E7FD0),
+}
+
+private val videoHosts = listOf(
+    "youtube.", "youtu.be", "facebook.", "fb.watch", "instagram.", "tiktok.", "vimeo.", "twitter.", "x.com",
+    "dailymotion.", "twitch.", "reddit.", "soundcloud.", "bilibili.",
+)
+
+fun sourceOf(link: String): DownloadSource {
+    val l = link.trim().lowercase()
+    return when {
+        ir.amirab.downloader.downloaditem.torrent.TorrentLinks.isFtp(l) -> DownloadSource.Ftp
+        ir.amirab.downloader.downloaditem.torrent.TorrentLinks.isTorrent(l) -> DownloadSource.Torrent
+        ".m3u8" in l || videoHosts.any { h -> l.substringAfter("://").substringBefore('/').let { host -> h in host } } -> DownloadSource.Video
+        else -> DownloadSource.Web
+    }
+}
+
+@Composable
+private fun SourceBadge(link: String) {
+    val source = remember(link) { sourceOf(link) }
+    Text(
+        source.label,
+        Modifier
+            .background(androidx.compose.ui.graphics.Color(source.color), androidx.compose.foundation.shape.RoundedCornerShape(50))
+            .padding(horizontal = 6.dp),
+        color = androidx.compose.ui.graphics.Color.White,
+        fontSize = myTextSizes.xs,
+        maxLines = 1,
+    )
 }
 
 @Composable

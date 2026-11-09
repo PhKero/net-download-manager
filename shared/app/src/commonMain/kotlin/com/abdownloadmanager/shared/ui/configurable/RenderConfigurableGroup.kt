@@ -5,6 +5,7 @@ import com.abdownloadmanager.shared.util.ui.theme.myTextSizes
 import com.abdownloadmanager.shared.util.div
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import com.abdownloadmanager.shared.ui.widget.Text
 import androidx.compose.runtime.Composable
@@ -23,30 +24,25 @@ fun RenderConfigurableGroup(
     group: ConfigurableGroup,
     modifier: Modifier,
     itemPadding: PaddingValues = PaddingValues(),
-    spaceBy: Dp = 8.dp,
+    spaceBy: Dp = 0.dp,
 ) {
     val enabled by group.nestedEnabled.collectAsState()
     val visible by group.nestedVisible.collectAsState()
     val title by group.groupTitle.collectAsState()
     Column(
         modifier
-            .clip(myShapes.defaultRounded)
-            .background(myColors.surface / 0.5f)
+            // classic group box: a thin frame with the title on top
+            .border(1.dp, myColors.onBackground / 0.2f)
+            .padding(bottom = 4.dp)
     ) {
         title?.rememberString()?.let {
             Text(
                 text = it,
                 fontSize = myTextSizes.base,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .padding(start = 8.dp)
-                    .padding(vertical = 8.dp)
-            )
-            Spacer(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(myColors.onSurface / 0.1f)
+                    .padding(top = 4.dp, bottom = 2.dp)
             )
         }
         group.mainConfigurable?.let {

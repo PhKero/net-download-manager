@@ -31,7 +31,8 @@ object YtDlpBinary {
         val fileName = if (isWindows) "$exeName.exe" else exeName
         System.getenv(envName)?.let(::File)?.takeIf { it.isFile }?.let { return it }
         val resources = System.getProperty("compose.application.resources.dir")?.let(::File)
-        listOfNotNull(resources, appDirectory()).forEach { dir ->
+        // tools the app downloaded later (ffmpeg) live in its data folder
+        listOfNotNull(resources, appDirectory(), FfmpegFetcher.toolsDir()).forEach { dir ->
             listOf(dir.resolve("tools").resolve(fileName), dir.resolve(fileName))
                 .firstOrNull { it.isFile }
                 ?.let { return it }

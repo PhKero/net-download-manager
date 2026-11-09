@@ -17,6 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
@@ -102,14 +103,15 @@ fun ProgressDownloadPage(
                 .padding(1.dp),
         ) {
             //tabs
-            MyTabRow {
+            ClassicTabRow(
+                Modifier.padding(start = horizontalPadding - 4.dp, top = 6.dp)
+            ) {
                 for (tab in tabs) {
-                    MyTab(
+                    ClassicTab(
                         selected = tab == selectedTab,
                         onClick = {
                             selectedTab = tab
                         },
-                        icon = tab.icon,
                         title = tab.title,
                     )
                 }
@@ -118,7 +120,6 @@ fun ProgressDownloadPage(
             //info / settings ...
             val tabContentModifier = Modifier
 
-            Spacer(Modifier.fillMaxWidth().height(1.dp).background(myColors.surface))
             Box(
                 Modifier
                     .height(150.dp)
@@ -266,9 +267,10 @@ private fun RenderProgressBar(itemState: IDownloadItemState) {
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(3.dp))
-            .height(22.dp)
-            .background(myColors.onBackground / 15)
+            .height(14.dp)
+            .border(1.dp, myColors.onBackground / 0.25f)
+            .background(myColors.onBackground / 0.08f)
+            .padding(1.dp)
     ) {
         progress?.let { progress ->
             Box(
@@ -353,8 +355,9 @@ private fun RenderPartInfo(
             WithContentAlpha(0.75f) {
                 Text(
                     trs("Start positions and download progress by connections", "مواضع البدء وتقدم التحميل لكل اتصال"),
-                    Modifier.padding(horizontal = horizontalPadding).padding(bottom = 4.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = horizontalPadding).padding(bottom = 4.dp),
                     fontSize = myTextSizes.sm,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     maxLines = 1,
                 )
             }
@@ -362,9 +365,10 @@ private fun RenderPartInfo(
                 itemState.parts,
                 Modifier
                     .padding(horizontal = horizontalPadding)
-                    .height(10.dp)
-                    .clip(myShapes.defaultRounded)
-                    .background(myColors.onBackground / 15)
+                    .height(12.dp)
+                    .border(1.dp, myColors.onBackground / 0.3f)
+                    .background(myColors.info / 0.12f)
+                    .padding(1.dp)
             )
             Box(
                 Modifier.weight(1f)
@@ -551,7 +555,7 @@ private fun RenderPropertyItem(propertyItem: SingleDownloadPagePropertyItem) {
     ) {
         WithContentAlpha(0.75f) {
             Text(
-                text = "${title.rememberString()}:",
+                text = classicLabel(title.rememberString()),
                 modifier = Modifier.weight(0.3f),
                 maxLines = 1,
                 fontSize = myTextSizes.base
@@ -593,7 +597,19 @@ private fun RenderInfo(
             .border(1.dp, myColors.onBackground / 0.15f, RoundedCornerShape(3.dp))
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
+        // classic look: the address on top, then the details
+        singleDownloadComponent.itemStateFlow.collectAsState().value?.downloadLink?.let { link ->
+            Text(
+                link,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                fontSize = myTextSizes.base,
+                modifier = Modifier.padding(bottom = 2.dp),
+            )
+        }
+        val nameTitle = myStringResource(Res.string.name)
         for (propertyItem in singleDownloadComponent.extraDownloadProgressInfo.collectAsState().value) {
+            if (propertyItem.name.rememberString() == nameTitle) continue
             Spacer(Modifier.height(2.dp))
             RenderPropertyItem(propertyItem)
         }
@@ -854,5 +870,47 @@ private fun RenderPart(part: UiPart, modifier: Modifier) {
                     .background(foregroundColor)
             )
         }
+    }
+}
+
+
+/** classic names for the detail lines (File size, Transfer rate, Resume capability) */
+@Composable
+private fun classicLabel(title: String): String {
+    return when (title) {
+        myStringResource(Res.string.size) -> trs("File size", "حجم الملف")
+        myStringResource(Res.string.speed) -> trs("Transfer rate", "معدل النقل")
+        myStringResource(Res.string.resume_support) -> trs("Resume capability", "إمكانية الاستكمال")
+        else -> title
+    }
+}
+
+@Composable
+private fun ClassicTabRow(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    Row(modifier, verticalAlignment = Alignment.Bottom) { content() }
+}
+
+/** a classic Windows tab: framed on top and sides, the chosen one sits higher and joins the page */
+@Composable
+private fun ClassicTab(
+    selected: Boolean,
+    onClick: () -> Unit,
+    title: StringSource,
+) {
+    val line = myColors.onBackground / 0.25f
+    Box(
+        Modifier
+            .padding(top = if (selected) 0.dp else 2.dp)
+            .background(if (selected) myColors.background else myColors.surface)
+            .drawBehind {
+                val w = 1f
+                drawLine(line, androidx.compose.ui.geometry.Offset(0f, 0f), androidx.compose.ui.geometry.Offset(size.width, 0f), w)
+                drawLine(line, androidx.compose.ui.geometry.Offset(0f, 0f), androidx.compose.ui.geometry.Offset(0f, size.height), w)
+                drawLine(line, androidx.compose.ui.geometry.Offset(size.width - w, 0f), androidx.compose.ui.geometry.Offset(size.width - w, size.height), w)
+            }
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
+        Text(title.rememberString(), maxLines = 1, fontSize = myTextSizes.base)
     }
 }

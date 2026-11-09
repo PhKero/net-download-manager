@@ -83,6 +83,11 @@ class YtDlpDownloadJob(
         val resultFile = downloadManager.downloadDataFolder.resolve(id.toString()).resolve("ytdlp-result.txt")
         resultFile.parentFile.mkdirs()
         resultFile.delete()
+        if (YtDlpBinary.findFfmpeg() == null) {
+            // first video: fetch ffmpeg once (shows as "preparing" with a percent)
+            _status.update { DownloadJobStatus.PreparingFile(0) }
+            FfmpegFetcher.ensure { percent -> _status.update { DownloadJobStatus.PreparingFile(percent) } }
+        }
         val args = buildArgs(useBrowserCookies, resultFile)
         val p = processLock.withLock {
             YtDlpBinary.newProcessBuilder(args).redirectErrorStream(true).start().also { process = it }
