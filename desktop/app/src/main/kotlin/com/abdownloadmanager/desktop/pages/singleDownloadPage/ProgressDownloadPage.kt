@@ -403,6 +403,8 @@ private fun RenderPartInfo(
                     },
                     modifier = Modifier
                         .fillMaxSize(),
+                    // one straight line per column, header and rows together (like the main list)
+                    gridLinesStartPadding = horizontalPadding,
                     wrapHeader = {
                         WithContentAlpha(0.75f) {
                             Box(
